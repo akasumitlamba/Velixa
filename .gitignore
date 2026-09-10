@@ -1,0 +1,7 @@
+build/
+dist/
+*.user
+*.pfx
+*.keystore
+local.properties
+__pycache__/

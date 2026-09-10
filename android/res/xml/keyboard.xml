@@ -1,0 +1,1 @@
+<input-method xmlns:android="http://schemas.android.com/apk/res/android" android:settingsActivity="com.velixa.app.MainActivity" android:supportsSwitchingToNextInputMethod="true"><subtype android:imeSubtypeMode="keyboard" android:imeSubtypeLocale="en_US" /></input-method>

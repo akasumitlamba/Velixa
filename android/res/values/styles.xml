@@ -1,0 +1,6 @@
+<resources>
+ <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+  <item name="android:fontFamily">sans</item><item name="android:colorAccent">#6750A4</item><item name="android:windowLightStatusBar">true</item><item name="android:statusBarColor">#FFFBFE</item><item name="android:navigationBarColor">#FFFBFE</item><item name="android:windowLightNavigationBar">true</item><item name="android:windowActionModeOverlay">true</item><item name="android:windowBackground">#FFFBFE</item>
+ </style>
+ <string name="accessibility_description">Velixa receives mouse and keyboard input from your paired Windows PC over your local network. It displays a cursor and screen-edge lights, performs taps and swipes, and enters text you type. Touch input stays on this device. No screen recording or cloud connection. You can disconnect at any time in Velixa.</string>
+</resources>
