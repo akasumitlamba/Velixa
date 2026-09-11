@@ -1,4 +1,4 @@
-# Velixa 0.2 Preview
+# Velixa 0.4.0 Preview
 
 Use one keyboard and mouse across Windows PCs and Android screens on your local network. No account, internet activation, or cloud relay is required.
 
@@ -12,17 +12,38 @@ Use one keyboard and mouse across Windows PCs and Android screens on your local 
 
 Upgrade all devices together and pair them once again when moving from 0.1 to 0.2. Pairing has changed and the old shared code is no longer used.
 
+## Desks, sleep and screen sizes
+
+- Click the desk name on Windows to create, switch, rename or delete a saved desk. Each desk keeps its own arrangement, screen sizes and manual sleep states, using the same paired devices. Up to 12 desk layouts can be saved.
+- Click or right-click a Windows device card, or tap a card on Android, to put it to sleep in Velixa. This excludes it from input sharing without disconnecting or putting the operating system to sleep. Choose Wake in Velixa when ready; manual sleep stays set across reconnects.
+- Android reports display sleep on heartbeats. Windows reports display power and suspend/resume changes. Offline devices remain on the desk; manual sleep is available when a device does not report its state correctly.
+- Choose Adjust screen size to scale the device from 25% to 300% while keeping its proportions. Windows includes phone, tablet, laptop and large-monitor presets. Newly paired Android screens start smaller.
+- Drag screens to snap their edges together without overlap. Multiple screens may share any side of a larger screen; only each touching segment transfers input. Colored layout edges show the destinations. Entry and exit lights follow the shared segment.
+
+Update all Windows PCs, including the coordinator, to 0.4.0 for the input fixes and sharing features. Android 0.3.0 remains compatible. Existing 0.2 pairings are retained. Multiple desks are saved layouts managed by the same coordinator; they do not create additional coordinators.
+
 ## Everyday use
 
-- Use **Change** beside the keyboard-and-mouse source to choose another connected Windows laptop.
-- Optional automatic source switching follows deliberate physical keyboard or mouse-click activity on that laptop. Android remains receive-only.
-- Offline devices keep their positions and appear dimmed. A returning Windows receiver asks whether to reconnect when its paired desk is reachable.
-- Closing the Windows window leaves Velixa in the system tray. Quit from its tray menu to stop it. The installer offers startup at Windows sign-in.
+- **Automatic — use any PC’s mouse or keyboard** is the default. Deliberate physical mouse movement, a click or a keypress transfers the input source without a prompt. Android remains receive-only.
+- Use **Change** beside the input source to select a fixed Windows PC instead. This choice applies across the desk until Automatic is selected again.
+- Offline devices keep their positions and appear dimmed. Returning Windows receivers reconnect to their saved, certificate-pinned desk without a prompt.
+- Minimizing or closing the Windows window leaves Velixa running in the system tray. Double-click the tray icon to reopen it. Quit from its tray menu to stop it. The installer offers startup at Windows sign-in.
 - **Ctrl + Alt + Backspace** returns input to the current source laptop.
 - Edge-light previews and leaving a desk are under **Settings**.
 - Android keeps the monochrome icon; Windows uses the supplied mark on white.
 
 The PC that created the desk coordinates traffic and must remain awake, including when another laptop is the input source. This preview does not migrate the coordinator automatically.
+
+## Clipboard, files and microphone
+
+These features work between Windows PCs running 0.4.0. Android 0.3.0 remains compatible for input control.
+
+- Text and images copied after Velixa starts are shared automatically with available Windows peers. Turn clipboard sharing off in Settings if desired. Clipboard payloads are limited to 16 MB.
+- Drag files onto an available Windows device card. They arrive in Downloads/Velixa on that PC. A bottom-right panel shows progress, speed and cancellation. Existing files are not overwritten. Folder transfers and dragging directly into another PC's Explorer window are not supported.
+- Open Settings > Microphone sharing. On the receiving PC, enable incoming microphone audio and choose an output device. On the source PC, choose the microphone and destination, then Start. Stop ends the stream. Receiving permission starts off each time Velixa launches.
+- To use shared audio as a microphone in another application, install a virtual audio cable separately on the receiver: select its playback endpoint (for VB-CABLE, CABLE Input) in Velixa, then its recording endpoint (CABLE Output) as the application's microphone. Without a virtual cable, incoming audio plays through the selected speakers or headphones. No virtual microphone driver is bundled. See https://vb-audio.com/Cable/.
+
+Transfers use the existing authenticated, encrypted connection. File contents are checked with SHA-256 before completion. Microphone audio is streamed without recording it to disk. Camera sharing is not included.
 
 ## Security
 

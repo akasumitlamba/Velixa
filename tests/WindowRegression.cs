@@ -1,0 +1,15 @@
+using System;
+using System.IO;
+using System.Drawing;
+using System.Reflection;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Velixa;
+public static class WindowRegression {
+ [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr h,int m,IntPtr w,IntPtr l);
+ static object Field(object o,string n){return o.GetType().GetField(n,BindingFlags.NonPublic|BindingFlags.Instance).GetValue(o);}
+ [STAThread]static void Main(){Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);int cycles=0;long maximum=0;Exception failure=null;bool busy=false;using(var f=new MainForm(new[]{"--preview-desk"}){Opacity=0,ShowInTaskbar=false})using(var timer=new System.Windows.Forms.Timer{Interval=25}){timer.Tick+=async(s,e)=>{if(busy)return;busy=true;try{var desk=(DeskSession)Field(f,"session");if(desk==null){busy=false;return;}if(desk.Input.HookThreadId==Thread.CurrentThread.ManagedThreadId)throw new Exception("Hooks still owned by UI thread");string source=desk.Source,layout=Wire.Json(desk.Devices);f.Show();var receiver=(Receiver)Field(f,"receiver");var pos=Cursor.Position;var bounds=SystemInformation.VirtualScreen;receiver.Handle(Wire.Parse(Wire.Json(new{t="enter",edge="left",x=(pos.X-bounds.Left)/(double)bounds.Width,y=(pos.Y-bounds.Top)/(double)bounds.Height})));var watch=Stopwatch.StartNew();if(cycles%3==0)SendMessage(f.Handle,0x10,IntPtr.Zero,IntPtr.Zero);else SendMessage(f.Handle,0x112,new IntPtr(cycles%3==1?0xf020:0xf060),IntPtr.Zero);watch.Stop();maximum=Math.Max(maximum,watch.ElapsedMilliseconds);await Task.Delay(30);if(f.Visible||f.IsDisposed)throw new Exception("Close/minimize did not preserve hidden window");if(!desk.Connected||desk.Source!=source||layout!=Wire.Json(desk.Devices))throw new Exception("Hide changed desk state");int before=desk.Input.HookEvents;var sent=new ManualResetEventSlim();Task task=Task.Run(()=>{Native.Position(pos.X,pos.Y);sent.Set();});Thread.Sleep(120);if(!sent.IsSet)throw new Exception("Native injection blocked behind the UI thread");await task;if(desk.Input.HookEvents<=before)throw new Exception("Input hooks stopped while hidden");receiver.Handle(Wire.Parse("{\"t\":\"leave\"}"));f.GetType().GetMethod("Open",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(f,null);if(!f.Visible)throw new Exception("Tray restore failed");if(++cycles<30){busy=false;return;}timer.Stop();f.GetType().GetField("closing",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(f,true);f.Close();}catch(Exception ex){failure=ex;timer.Stop();f.GetType().GetField("closing",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(f,true);f.Close();}};f.Shown+=(s,e)=>timer.Start();Application.Run(f);}if(failure!=null){Console.Error.WriteLine(failure);Environment.ExitCode=1;return;}Console.WriteLine("30 close/minimize/restore cycles passed with active receiver; injection stays responsive while UI blocked; maximum window command "+maximum+" ms.");}
+}

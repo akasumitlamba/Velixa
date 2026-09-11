@@ -1,20 +1,22 @@
-# Velixa 0.2 automated validation
+# Velixa 0.4.0 Windows automated validation
 
-Release artifacts are built from the current Windows and Android sources. Manual device acceptance is left to the user.
+## Current coverage
 
-## Automated coverage
+- 229 integration checks: authentication, routing, source selection, saved desks, sleep, sizing, shared edge segments, randomized non-overlapping placements, and sharing capability authorization.
+- 9 core cryptography, framing and storage checks.
+- 30 close/minimize/restore cycles with active input hooks and receiver; input injection remains responsive while the UI thread is blocked.
+- 8 actual injected title-bar minimize/close clicks, verifying the receiver and session remain alive.
+- 24 sharing checks: binary and empty files, duplicate names, clipboard text/images, checksum rejection, cancellation, path validation, temporary-file cleanup, microphone permissions, native audio capture/output, negotiation and stream shutdown.
+- An 8 MB file transferred through two authenticated TLS clients and the coordinator, with byte/hash verification and a working heartbeat. Final local test took 2065 ms; this is not a real-network speed guarantee.
+- Three rendered dialogs checked, including screen-size slider/value separation; transfer panel inspected.
+- Installer compilation, portable archive contents and SHA-256 checksums verified.
 
-- 25 integration assertions: short-lived four-digit codes, incorrect-code rejection, SRP mutual authentication, per-device token issuance, saved-token reconnection, identity binding, single-use QR pairing, expiry, attempt limits, heartbeat expiry, invalid pointer values, horizontal and vertical edge geometry, non-overlapping boundaries, offline-device exclusion, source routing, Android receive-only enforcement, stale-source rejection, layout synchronization, and retained offline devices.
-- 9 core checks: HMAC known vector, comparison behavior, Unicode wire format, oversized-frame rejection, TLS identity and encrypted settings round trips.
-- 6 Android instrumentation checks on a disposable Android 15 emulator: decoding the Windows-generated QR, authenticating over the production protocol, receiving the shared desk, sending X/Y positions and receiving the result, exchanging the QR token for a saved credential, and pinned reconnection.
-- Native Windows overlay rectangles checked against the actual monitor bounds for all four edges earlier in this work.
-- APK signature schemes v2/v3 verified; Android updates reuse the existing signing identity.
-- Windows EXE and installer compilation, installer contents, and release hashes verified.
+Android 0.3.0 is unchanged and previously passed 10 emulator checks. New clipboard, file and microphone features are Windows-only.
 
-The automated Windows render fixtures are isolated from saved desk state. They do not represent real connected devices. No further manual desktop testing was performed after the user requested automated checks only.
+## Run the checks
 
-## Acceptance left to the user
+Run `build.ps1 -WindowsOnly`, then `tests/run-tests.ps1`. Tests use isolated data and ports rather than the installed desk.
 
-Physical-device camera scanning, mixed-DPI multi-monitor movement, Windows-to-Windows source handoff on separate laptops, reconnect prompts after real power cycles, Android OEM battery behavior, and app-specific typing remain manual acceptance tasks. The coordinator PC must remain awake. The Windows installer is unsigned. This is a preview release.
+## Physical-device acceptance
 
-Run `tests/run-tests.ps1` for Windows/integration assertions. Android instrumentation uses `tests/EmulatorHost.cs`, `tests/android-smoke.ps1`, and only the emulator identified explicitly as `emulator-5580`.
+Real multi-PC input handoff, mixed-DPI movement, OEM sleep behavior and microphone selection in third-party applications still require physical-device acceptance. Application microphone input requires a separately installed virtual audio cable. The coordinator must remain awake. The Windows installer is unsigned. This is a preview release.

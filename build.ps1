@@ -1,4 +1,4 @@
-﻿param([string]$AndroidSdk = $env:ANDROID_HOME)
+﻿param([string]$AndroidSdk = $env:ANDROID_HOME, [switch]$WindowsOnly)
 $ErrorActionPreference = 'Stop'
 $project = $PSScriptRoot
 Set-Location -LiteralPath $project
@@ -7,41 +7,14 @@ $platform = Join-Path $AndroidSdk 'platforms/android-37.1/android.jar'
 $androidTools = Join-Path $AndroidSdk 'build-tools/37.0.0'
 function Run([string]$exe, [string[]]$arguments) { & $exe @arguments; if ($LASTEXITCODE -ne 0) { throw "$exe failed: $LASTEXITCODE" } }
 New-Item -ItemType Directory -Force build/windows,build/android/classes,dist,android/res/mipmap-mdpi,android/res/mipmap-anydpi-v26,android/res/mipmap-anydpi-v33 | Out-Null
-Add-Type -AssemblyName System.Drawing
-$logo = [System.Drawing.Image]::FromFile((Join-Path $project 'assets/velixa-transparent.png'))
-function Export-Size([int]$size,[string]$path) {
- $bitmap = New-Object System.Drawing.Bitmap($size,$size)
- $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
- $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
- $graphics.DrawImage($logo,0,0,$size,$size)
- $bitmap.Save($path,[System.Drawing.Imaging.ImageFormat]::Png)
- $graphics.Dispose(); $bitmap.Dispose()
-}
-# Windows uses a white icon background; Android keeps its themed monochrome asset.
-Export-Size 256 (Join-Path $project 'build/windows/velixa-logo.png')
-$winImage = [System.Drawing.Bitmap]::new(256,256)
-$winGraphics = [System.Drawing.Graphics]::FromImage($winImage)
-$winGraphics.Clear([System.Drawing.Color]::White)
-$winGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-$winGraphics.DrawImage($logo,16,16,224,224)
-$winImage.Save((Join-Path $project 'build/windows/velixa-logo.png'),[System.Drawing.Imaging.ImageFormat]::Png)
-$winGraphics.Dispose(); $winImage.Dispose()
-Export-Size 192 (Join-Path $project 'android/res/mipmap-mdpi/ic_launcher.png')
-Export-Size 432 (Join-Path $project 'android/res/drawable/logo_color.png')
-$logo.Dispose()
-# PNG-compressed ICO, supported by Windows Vista and newer.
-$png = [IO.File]::ReadAllBytes((Join-Path $project 'build/windows/velixa-logo.png'))
-$icoStream = [IO.File]::Create((Join-Path $project 'build/windows/velixa.ico'))
-$writer = New-Object IO.BinaryWriter($icoStream)
-$writer.Write([uint16]0);$writer.Write([uint16]1);$writer.Write([uint16]1)
-$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0);$writer.Write([byte]0)
-$writer.Write([uint16]1);$writer.Write([uint16]32);$writer.Write([uint32]$png.Length);$writer.Write([uint32]22);$writer.Write($png);$writer.Close()
+& (Join-Path $project 'assets/build-icons.ps1')
 Copy-Item deps/bc/lib/net461/BouncyCastle.Cryptography.dll build/windows/
 Copy-Item deps/qr/lib/net40/QRCoder.dll build/windows/
 $sources = Get-ChildItem windows -Filter *.cs | Select-Object -ExpandProperty FullName
 Run 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe' (@('/nologo','/target:winexe','/optimize+','/out:build/windows/Velixa.exe','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Web.Extensions.dll','/r:System.Security.dll','/r:System.Core.dll','/r:build/windows/BouncyCastle.Cryptography.dll','/r:build/windows/QRCoder.dll','/win32manifest:windows/app.manifest','/win32icon:build/windows/velixa.ico') + $sources)
 Copy-Item windows/Velixa.exe.config build/windows/Velixa.exe.config
 Copy-Item assets/THIRD-PARTY-NOTICES.txt build/windows/THIRD-PARTY-NOTICES.txt
+if (!$WindowsOnly) {
 Run (Join-Path $androidTools 'aapt2.exe') @('compile','--dir','android/res','-o','build/android/resources.zip')
 New-Item -ItemType Directory -Force build/android/generated | Out-Null
 Run (Join-Path $androidTools 'aapt2.exe') @('link','-o','build/android/base.apk','-I',$platform,'--manifest','android/AndroidManifest.xml','-A','android/assets','--java','build/android/generated','build/android/resources.zip','--auto-add-overlay')
@@ -51,6 +24,7 @@ Run 'jar' @('cf','build/android/classes.jar','-C','build/android/classes','.')
 New-Item -ItemType Directory -Force build/android/dex | Out-Null
 Run (Join-Path $androidTools 'd8.bat') @('--lib',$platform,'--min-api','26','--output','build/android/dex','build/android/classes.jar','deps/zxing.jar')
 Copy-Item build/android/base.apk build/android/unaligned.apk
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::Open((Join-Path $project 'build/android/unaligned.apk'),[IO.Compression.ZipArchiveMode]::Update)
 foreach ($dex in Get-ChildItem build/android/dex -Filter *.dex) { [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$dex.FullName,$dex.Name) | Out-Null }
@@ -69,8 +43,9 @@ if (!(Test-Path -LiteralPath $keyPath)) {
  [IO.File]::WriteAllBytes($passwordPath,[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($env:VELIXA_SIGN_PASSWORD),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser))
  Run 'keytool' @('-genkeypair','-keystore',$keyPath,'-storepass:env','VELIXA_SIGN_PASSWORD','-keypass:env','VELIXA_SIGN_PASSWORD','-alias','velixa','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Velixa Local Release','-noprompt')
 } else { $env:VELIXA_SIGN_PASSWORD = [Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($passwordPath),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser)) }
-try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.2.0-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
-Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.2.0-Android.apk')
+try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.3.0-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
+Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.3.0-Android.apk')
+}
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.2.0-Windows-Portable.zip -Force
-Get-ChildItem dist -File | Where-Object Extension -In '.apk','.exe','.zip' | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS.txt
+Compress-Archive -Path build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.4.0-Windows-Portable.zip -Force
+Get-Item dist/Velixa-0.4.0-Windows-Setup.exe,dist/Velixa-0.4.0-Windows-Portable.zip | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.4.0.txt

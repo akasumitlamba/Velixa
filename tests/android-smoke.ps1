@@ -24,4 +24,4 @@ try{& "$bt/apksigner.bat" sign --ks (Join-Path $signDir 'android-release.keystor
 & "$sdk/platform-tools/adb.exe" -s $Serial push build/test-qr.png /data/local/tmp/velixa-qr.png
 $result = & "$sdk/platform-tools/adb.exe" -s $Serial shell am instrument -w -e image /data/local/tmp/velixa-qr.png com.velixa.tests/com.velixa.app.Smoke
 $result
-if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "6 Android checks passed") { throw "Android smoke checks did not pass" }
+if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "10 Android checks passed") { throw "Android smoke checks did not pass" }

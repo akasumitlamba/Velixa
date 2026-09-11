@@ -24,4 +24,19 @@ public class SoftPanel:Panel {
  public SoftPanel(){DoubleBuffered=true;BackColor=Color.Transparent;SetStyle(ControlStyles.ResizeRedraw,true);}
  protected override void OnPaintBackground(PaintEventArgs e){base.OnPaintBackground(e);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Visual.Fill(e.Graphics,new RectangleF(0,0,Width,Height),Radius,FillColor);Visual.Stroke(e.Graphics,new RectangleF(.5f,.5f,Width-1,Height-1),Radius,Color.FromArgb(43,47,61));}
 }
+public class DarkMenuRenderer:ToolStripProfessionalRenderer {
+ public DarkMenuRenderer():base(new DarkMenuColors()){}
+ protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e){var r=new Rectangle(4,1,e.Item.Width-8,e.Item.Height-2);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;if(e.Item.Selected&&e.Item.Enabled)Visual.Fill(e.Graphics,new RectangleF(r.X,r.Y,r.Width,r.Height),6,Color.FromArgb(51,43,77));else using(var b=new SolidBrush(Color.FromArgb(26,29,40)))e.Graphics.FillRectangle(b,r);}
+ protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e){var r=new Rectangle(e.ImageRectangle.X+2,e.ImageRectangle.Y+2,e.ImageRectangle.Width-4,e.ImageRectangle.Height-4);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Visual.Fill(e.Graphics,new RectangleF(r.X,r.Y,r.Width,r.Height),4,Color.FromArgb(141,119,249));using(var pen=new Pen(Color.White,2)){e.Graphics.DrawLine(pen,r.X+3,r.Y+r.Height/2,r.X+r.Width/2-1,r.Bottom-4);e.Graphics.DrawLine(pen,r.X+r.Width/2-1,r.Bottom-4,r.Right-3,r.Y+3);}}
+ protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e){using(var pen=new Pen(Color.FromArgb(43,47,61)))e.Graphics.DrawLine(pen,24,e.Item.Height/2,e.Item.Width-24,e.Item.Height/2);}
+ protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e){var r=new RectangleF(0,0,e.ToolStrip.Width-1,e.ToolStrip.Height-1);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Visual.Fill(e.Graphics,r,10,Color.FromArgb(26,29,40));Visual.Stroke(e.Graphics,r,10,Color.FromArgb(58,62,77));}
+ protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e){}
+ protected override void OnRenderImageMargin(ToolStripRenderEventArgs e){}
+ protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e){e.TextColor=e.Item.Enabled?Color.FromArgb(230,232,240):Color.FromArgb(100,105,122);base.OnRenderItemText(e);}
+ class DarkMenuColors:ProfessionalColorTable{public override Color MenuBorder{get{return Color.FromArgb(58,62,77);}}public override Color MenuItemBorder{get{return Color.Transparent;}}public override Color MenuItemSelected{get{return Color.FromArgb(51,43,77);}}public override Color MenuStripGradientBegin{get{return Color.FromArgb(26,29,40);}}public override Color MenuStripGradientEnd{get{return Color.FromArgb(26,29,40);}}public override Color MenuItemSelectedGradientBegin{get{return Color.FromArgb(51,43,77);}}public override Color MenuItemSelectedGradientEnd{get{return Color.FromArgb(51,43,77);}}public override Color MenuItemPressedGradientBegin{get{return Color.FromArgb(61,53,87);}}public override Color MenuItemPressedGradientEnd{get{return Color.FromArgb(61,53,87);}}public override Color ImageMarginGradientBegin{get{return Color.FromArgb(26,29,40);}}public override Color ImageMarginGradientMiddle{get{return Color.FromArgb(26,29,40);}}public override Color ImageMarginGradientEnd{get{return Color.FromArgb(26,29,40);}}public override Color SeparatorDark{get{return Color.FromArgb(43,47,61);}}public override Color SeparatorLight{get{return Color.Transparent;}}public override Color ToolStripDropDownBackground{get{return Color.FromArgb(26,29,40);}}}
+}
+public static class DarkMenu {
+ static readonly DarkMenuRenderer renderer=new DarkMenuRenderer();
+ public static ContextMenuStrip Create(){return new ContextMenuStrip{BackColor=Color.FromArgb(26,29,40),ForeColor=Color.FromArgb(230,232,240),Font=Visual.Font(14),ShowImageMargin=true,Renderer=renderer,Padding=new Padding(0,4,0,4)};}
+}
 }
