@@ -13,8 +13,13 @@ public final class MicrophoneService extends Service {
  private volatile String stream="";private volatile boolean running;private Thread worker;
  private final Set<String> accepted=ConcurrentHashMap.newKeySet();private final Set<String> targets=ConcurrentHashMap.newKeySet();
  static String fresh(){return UUID.randomUUID().toString().replace("-","");}
- static AudioDeviceInfo[] devices(Context c){return ((AudioManager)c.getSystemService(AUDIO_SERVICE)).getDevices(AudioManager.GET_DEVICES_INPUTS);}
- static String label(AudioDeviceInfo d){String type=d.getType()==AudioDeviceInfo.TYPE_BUILTIN_MIC?"System microphone":d.getType()==AudioDeviceInfo.TYPE_USB_DEVICE||d.getType()==AudioDeviceInfo.TYPE_USB_HEADSET?"USB microphone":"External microphone";return type+" · "+d.getProductName();}
+ static AudioDeviceInfo[] devices(Context c){
+  AudioDeviceInfo[] inputs=((AudioManager)c.getSystemService(AUDIO_SERVICE)).getDevices(AudioManager.GET_DEVICES_INPUTS);
+  List<MicrophoneRoutes.Route> routes=new ArrayList<>();Map<Integer,AudioDeviceInfo> byId=new HashMap<>();
+  for(AudioDeviceInfo d:inputs){routes.add(new MicrophoneRoutes.Route(d.getId(),d.getType(),Build.VERSION.SDK_INT>=28?d.getAddress():"",String.valueOf(d.getProductName()),d.isSource()));byId.put(d.getId(),d);}
+  List<AudioDeviceInfo> selected=new ArrayList<>();for(MicrophoneRoutes.Route route:MicrophoneRoutes.select(routes))selected.add(byId.get(route.id));return selected.toArray(new AudioDeviceInfo[0]);
+ }
+ static String label(AudioDeviceInfo d){return MicrophoneRoutes.label(d.getType(),String.valueOf(d.getProductName()),Build.MODEL);}
  static void emit(String to,JSONObject body){InputService service=InputService.instance;if(service!=null)service.sendShare(to,body);}
  static JSONObject message(String kind,String id){try{return new JSONObject().put("kind",kind).put("id",id);}catch(Exception e){throw new IllegalStateException(e);}}
  public static void list(Context c,String to){try{JSONArray mics=new JSONArray();for(AudioDeviceInfo d:devices(c))mics.put(new JSONObject().put("id",d.getId()).put("name",label(d)));emit(to,message("mic-list",fresh()).put("peerName",Build.MODEL).put("mics",mics));}catch(Exception ignored){}}
@@ -33,7 +38,7 @@ public final class MicrophoneService extends Service {
  }
  synchronized void begin(String requester,int deviceId){
   stopStream();if(worker!=null&&worker.isAlive()){try{emit(requester,message("mic-error",fresh()).put("message","Microphone is stopping. Select it again shortly."));}catch(Exception ignored){}return;}
-  AudioDeviceInfo selected=null;for(AudioDeviceInfo d:devices(this))if(d.getId()==deviceId)selected=d;if(selected==null)return;
+  AudioDeviceInfo selected=null;for(AudioDeviceInfo d:devices(this))if(d.getId()==deviceId)selected=d;if(selected==null){try{emit(requester,message("mic-error",fresh()).put("message","Microphone list changed. Close and reopen the microphone menu."));}catch(Exception ignored){}return;}
   stream=fresh();final String id=stream;final AudioDeviceInfo device=selected;targets.add(requester);
   JSONArray peers=InputService.deskDevices;if(peers!=null)for(int i=0;i<peers.length();i++){JSONObject d=peers.optJSONObject(i);if(d!=null&&d.optString("kind").equals("Windows")&&d.optBoolean("online")&&!d.optBoolean("sleeping"))targets.add(d.optString("id"));}
   try{for(String peer:targets)emit(peer,message("mic-begin",id).put("rate",48000).put("channels",1).put("bits",16));}catch(Exception ignored){}

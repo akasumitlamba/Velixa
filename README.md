@@ -2,7 +2,7 @@
 
 Share a keyboard, mouse, clipboard, files and microphone across your local desk. Windows PCs can control Windows and Android devices without an account or cloud relay.
 
-**[Download Windows and Android 0.5.0](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.0-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
+**[Download Windows and Android 0.5.1](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
 
 ![Velixa desk with aligned controls, gold local screen and blue remote screens](docs/desk.png)
 
@@ -14,7 +14,9 @@ Share a keyboard, mouse, clipboard, files and microphone across your local desk.
 4. On Android, enable Velixa continuity in Accessibility, then scan the QR code shown under **Add device > Android** on the PC.
 5. Arrange the screens to match your physical desk. Move the pointer across a touching edge to switch devices.
 
-Upgrade all devices to 0.5.0 for this release. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
+Upgrade all devices to 0.5.1 for this release. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
+
+Device boxes show large numbers. The numbered name list below the arrangement uses the same shared order on Windows and Android. Names on Android wrap to fit the available width.
 
 ## Everyday controls
 
@@ -36,7 +38,7 @@ Folder transfers, Android file/clipboard sharing and direct Explorer-to-Explorer
 
 ## Microphones
 
-The microphone menu lists available inputs with their source device, such as **USB microphone · Model name (VOSTRO)** or **System microphone · Motorola (Motorola)**. Hardware names come from the operating system; device-type labels use the information available from its drivers. Lists refresh approximately every five seconds.
+The microphone menu lists available inputs with their source device, such as **USB microphone · Model name (VOSTRO)** or **System microphone (Motorola)**. Hardware names come from the operating system; device-type labels use the information available from its drivers. Android combines built-in microphone routes into one system microphone and excludes telephony and virtual audio routes. Distinct connected USB, headset and Bluetooth microphones remain selectable. Lists refresh approximately every five seconds.
 
 ### Share a Windows microphone
 

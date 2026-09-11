@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -242,8 +242,7 @@ public class DeskCanvas:Control {
  bool local=d.id==Network.LocalId,source=d.id==session.Source,online=d.Available,phone=d.kind=="Android";Color color=DeviceColor(d.id);float radius=phone?12:8;
  Visual.Fill(g,r,radius,local?Color.FromArgb(57,48,29):Color.FromArgb(27,45,66));var screen=r;screen.Inflate(-6,-7);if(screen.Width>0&&screen.Height>0)Visual.Fill(g,screen,4,local?Color.FromArgb(73,60,31):Color.FromArgb(30,55,83));Visual.Stroke(g,r,radius,online?color:Color.FromArgb(150,color),1.5f);
  if(d==Selected||d==dropHover){var inner=r;inner.Inflate(-3,-3);Visual.Stroke(g,inner,6,color,2);}
- float textSize=Math.Max(10,Math.Min(14,r.Width/10));Visual.Text(g,r.Width<100?number.ToString():d.name,new RectangleF(r.X+6,r.Y+r.Height/2-16,r.Width-12,28),textSize,online?Color.White:MainForm.Muted,true,StringAlignment.Center);
- if(r.Height>=85&&r.Width>=100)Visual.Text(g,d.sleeping?"Sleeping":!d.online?"Offline":local?"This device":source?"Input source":"Ready",new RectangleF(r.X+6,r.Y+r.Height/2+13,r.Width-12,21),11,color,false,StringAlignment.Center);
+ float textSize=Math.Max(12,Math.Min(64,Math.Min(r.Width*.48f,r.Height*.48f)));Visual.Text(g,number.ToString(),new RectangleF(r.X+4,r.Y,r.Width-8,r.Height),textSize,online?Color.White:MainForm.Muted,true,StringAlignment.Center);
  foreach(var n in session.Devices.Where(v=>v!=d&&v.Available))foreach(string side in new[]{"left","right","top","bottom"}){double lo,hi;if(!d.Available||!DeskGeometry.Segment(d.Bounds,n.Bounds,side,out lo,out hi))continue;using(var pen=new Pen(DeviceColor(n.id),2)){if(side=="left"||side=="right"){float x=side=="left"?r.Left+1:r.Right-1;float y1=Math.Max(r.Top+5,outer.Top+(float)lo*outer.Height+3),y2=Math.Min(r.Bottom-5,outer.Top+(float)hi*outer.Height-3);if(y2>y1)g.DrawLine(pen,x,y1,x,y2);}else{float y=side=="top"?r.Top+1:r.Bottom-1;float x1=Math.Max(r.Left+5,outer.Left+(float)lo*outer.Width+3),x2=Math.Min(r.Right-5,outer.Left+(float)hi*outer.Width-3);if(x2>x1)g.DrawLine(pen,x1,y,x2,y);}}}g.Restore(saved);
  }
  for(int i=0;i<session.Devices.Count;i++){var d=session.Devices[i];var r=Legend(i);Visual.Text(g,(i+1)+"  "+d.name+(d.id==Network.LocalId?" · This device":""),r,14,DeviceColor(d.id),true);}

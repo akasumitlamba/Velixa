@@ -47,10 +47,10 @@ if (!(Test-Path -LiteralPath $keyPath)) {
  [IO.File]::WriteAllBytes($passwordPath,[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($env:VELIXA_SIGN_PASSWORD),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser))
  Run 'keytool' @('-genkeypair','-keystore',$keyPath,'-storepass:env','VELIXA_SIGN_PASSWORD','-keypass:env','VELIXA_SIGN_PASSWORD','-alias','velixa','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Velixa Local Release','-noprompt')
 } else { $env:VELIXA_SIGN_PASSWORD = [Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($passwordPath),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser)) }
-try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.5.0-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
-Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.5.0-Android.apk')
+try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.5.1-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
+Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.5.1-Android.apk')
 }
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.5.0-Windows-Portable.zip -Force
-$artifacts=@('dist/Velixa-0.5.0-Windows-Setup.exe','dist/Velixa-0.5.0-Windows-Portable.zip'); if (!$WindowsOnly) {$artifacts+='dist/Velixa-0.5.0-Android.apk'}
-Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.5.0.txt
+Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.5.1-Windows-Portable.zip -Force
+$artifacts=@('dist/Velixa-0.5.1-Windows-Setup.exe','dist/Velixa-0.5.1-Windows-Portable.zip'); if (!$WindowsOnly) {$artifacts+='dist/Velixa-0.5.1-Android.apk'}
+Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.5.1.txt
