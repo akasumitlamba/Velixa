@@ -10,7 +10,29 @@ public static class DeskGeometry {
  public static int Find(List<RectangleF> r,int current,string direction,double ratio,Func<int,bool> online,out double nextRatio){nextRatio=ratio;if(current<0||current>=r.Count||Double.IsNaN(ratio)||Double.IsInfinity(ratio))return -1;var a=r[current];bool h=direction=="left"||direction=="right";float cross=(h?a.Top:a.Left)+(float)Math.Max(0,Math.Min(1,ratio))*(h?a.Height:a.Width);int best=-1;float distance=Single.MaxValue;
   for(int i=0;i<r.Count;i++){if(i==current||!online(i))continue;var b=r[i];float gap=direction=="right"?b.Left-a.Right:direction=="left"?a.Left-b.Right:direction=="bottom"?b.Top-a.Bottom:a.Top-b.Bottom;float low=h?b.Top:b.Left,high=h?b.Bottom:b.Right;if(Math.Abs(gap)>.75f||cross<low||cross>=high||gap>=distance)continue;distance=gap;best=i;nextRatio=(cross-low)/(high-low);}return best;
  }
- public static PointF Snap(RectangleF moving,IEnumerable<RectangleF> others){var all=others.ToList();if(all.Count==0)return moving.Location;var candidates=new List<PointF>();foreach(var b in all){float cy=Math.Max(b.Top-moving.Height+1,Math.Min(b.Bottom-1,moving.Y)),cx=Math.Max(b.Left-moving.Width+1,Math.Min(b.Right-1,moving.X));foreach(float y in new[]{cy,b.Top,b.Bottom-moving.Height}){candidates.Add(new PointF(b.Right,y));candidates.Add(new PointF(b.Left-moving.Width,y));}foreach(float x in new[]{cx,b.Left,b.Right-moving.Width}){candidates.Add(new PointF(x,b.Bottom));candidates.Add(new PointF(x,b.Top-moving.Height));}}return candidates.Where(v=>!all.Any(b=>Overlaps(new RectangleF(v,moving.Size),b))).OrderBy(v=>(v.X-moving.X)*(v.X-moving.X)+(v.Y-moving.Y)*(v.Y-moving.Y)).First();}
+  public static PointF Snap(RectangleF moving,IEnumerable<RectangleF> others){
+   var all=others.ToList();if(all.Count==0)return moving.Location;var candidates=new List<PointF>();
+   foreach(var b in all){
+    float topY=b.Top,botY=b.Bottom-moving.Height,midY=b.Top+(b.Height-moving.Height)/2f;
+    float cy=Math.Max(b.Top-moving.Height+1,Math.Min(b.Bottom-1,moving.Y));
+    if(Math.Abs(cy-topY)<20)cy=topY;else if(Math.Abs(cy-botY)<20)cy=botY;else if(Math.Abs(cy-midY)<20)cy=midY;
+    foreach(float y in new[]{topY,midY,botY,cy}){candidates.Add(new PointF(b.Right,y));candidates.Add(new PointF(b.Left-moving.Width,y));}
+    float leftX=b.Left,rightX=b.Right-moving.Width,midX=b.Left+(b.Width-moving.Width)/2f;
+    float cx=Math.Max(b.Left-moving.Width+1,Math.Min(b.Right-1,moving.X));
+    if(Math.Abs(cx-leftX)<20)cx=leftX;else if(Math.Abs(cx-rightX)<20)cx=rightX;else if(Math.Abs(cx-midX)<20)cx=midX;
+    foreach(float x in new[]{leftX,midX,rightX,cx}){candidates.Add(new PointF(x,b.Bottom));candidates.Add(new PointF(x,b.Top-moving.Height));}
+   }
+   return candidates.Where(v=>!all.Any(b=>Overlaps(new RectangleF(v,moving.Size),b))).OrderBy(v=>CandidateScore(v,moving,all)).First();
+  }
+  static float CandidateScore(PointF v,RectangleF moving,List<RectangleF> all){
+   float dx=v.X-moving.X,dy=v.Y-moving.Y;float score=dx*dx+dy*dy;
+   foreach(var b in all){
+    bool alignedX=Math.Abs(v.X-b.Left)<.01f||Math.Abs(v.X-(b.Right-moving.Width))<.01f||Math.Abs(v.X-(b.Left+(b.Width-moving.Width)/2f))<.01f;
+    bool alignedY=Math.Abs(v.Y-b.Top)<.01f||Math.Abs(v.Y-(b.Bottom-moving.Height))<.01f||Math.Abs(v.Y-(b.Top+(b.Height-moving.Height)/2f))<.01f;
+    if(alignedX)score-=300f;if(alignedY)score-=300f;
+   }
+   return score;
+  }
  public static bool Overlaps(RectangleF a,RectangleF b){return Math.Min(a.Right,b.Right)-Math.Max(a.Left,b.Left)>.01f&&Math.Min(a.Bottom,b.Bottom)-Math.Max(a.Top,b.Top)>.01f;}
  public static bool Segment(RectangleF a,RectangleF b,string side,out double from,out double to){bool h=side=="left"||side=="right";float gap=side=="left"?a.Left-b.Right:side=="right"?b.Left-a.Right:side=="top"?a.Top-b.Bottom:b.Top-a.Bottom;float low=Math.Max(h?a.Top:a.Left,h?b.Top:b.Left),high=Math.Min(h?a.Bottom:a.Right,h?b.Bottom:b.Right);from=(low-(h?a.Top:a.Left))/(h?a.Height:a.Width);to=(high-(h?a.Top:a.Left))/(h?a.Height:a.Width);return Math.Abs(gap)<=.75f&&high>low;}
 
@@ -38,7 +60,7 @@ public class DeskSession : IDisposable {
  public void UseSource(string id){if(!Connected)return;if(!network.IsHost){network.Send(new{t="fixed-source",id=id});return;}if(!Devices.Any(d=>d.id==id&&d.Available&&d.kind=="Windows"))return;Store.automatic=false;Reset();Source=id;Publish();}
  public void SelectSource(string id){if(!Connected)return;if(!network.IsHost){network.Send(new{t="source",id=id});return;}var d=Devices.Find(v=>v.id==id);if(d==null||!d.Available||d.kind!="Windows"||Source==id)return;Reset();Source=id;Publish(false);}
  public void Position(string id,double x,double y){if(!Connected||Double.IsNaN(x)||Double.IsNaN(y)||Double.IsInfinity(x)||Double.IsInfinity(y))return;x=Math.Max(-5000,Math.Min(5000,x));y=Math.Max(-5000,Math.Min(5000,y));if(!network.IsHost){network.Send(new{t="layout",id=id,x=x,y=y});return;}var d=Devices.Find(v=>v.id==id);if(d==null)return;var point=DeskGeometry.Snap(new RectangleF((float)x,(float)y,d.Bounds.Width,d.Bounds.Height),Devices.Where(v=>v!=d).Select(v=>v.Bounds));d.x=point.X;d.y=point.Y;Reset();Publish();}
- void Normalize(){var placed=new List<RectangleF>();foreach(var d in Devices){var point=DeskGeometry.Snap(d.Bounds,placed);d.x=point.X;d.y=point.Y;placed.Add(d.Bounds);}}
+  void Normalize(){var placed=new List<RectangleF>();foreach(var d in Devices){double lo,hi;if(placed.Count>0&&!placed.Any(b=>DeskGeometry.Overlaps(d.Bounds,b))&&placed.Any(b=>new[]{"left","right","top","bottom"}.Any(s=>DeskGeometry.Segment(d.Bounds,b,s,out lo,out hi)))){placed.Add(d.Bounds);continue;}var point=DeskGeometry.Snap(d.Bounds,placed);d.x=point.X;d.y=point.Y;placed.Add(d.Bounds);}}
  void SaveProfiles(){var p=Store.desks.Find(v=>v.id==Store.active);if(p==null){p=new DeskProfile{id=Guid.NewGuid().ToString(),name="My desk"};Store.desks.Add(p);Store.active=p.id;}p.devices=Devices;if(!Preview)Wire.SaveSecret("desks-v3.bin",Wire.Json(Store));}
  public void Profile(string action,string value){if(!Connected)return;if(!network.IsHost){network.Send(new{t="profile",action=action,value=value});return;}SaveProfiles();if(action=="create"){if(Store.desks.Count>=12)return;var p=new DeskProfile{id=Guid.NewGuid().ToString(),name=CleanName(value),devices=new JavaScriptSerializer().Deserialize<List<Device>>(Wire.Json(Devices))};Store.desks.Add(p);Store.active=p.id;Devices=p.devices;}else if(action=="switch"){var p=Store.desks.Find(v=>v.id==value);if(p==null)return;foreach(var current in Devices){var d=p.devices.Find(v=>v.id==current.id);if(d==null){d=new Device{id=current.id,scale=current.scale,x=p.devices.Count==0?0:p.devices.Max(v=>v.Bounds.Right),sleeping=true};p.devices.Add(d);}d.sharing=current.sharing;d.online=current.online;d.awake=current.awake;d.name=current.name;d.kind=current.kind;d.w=current.w;d.h=current.h;}Store.active=p.id;Devices=p.devices;}else if(action=="rename")Store.desks.Find(v=>v.id==Store.active).name=CleanName(value);else if(action=="delete"){if(Store.desks.Count<=1)return;var id=Store.active;Profile("switch",Store.desks.First(v=>v.id!=id).id);Store.desks.RemoveAll(v=>v.id==id);}else return;Normalize();EnsureSource();Reset();Publish();}
  static string CleanName(string value){value=(value??"").Trim();return value.Length==0?"New desk":value.Substring(0,Math.Min(32,value.Length));}
