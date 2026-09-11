@@ -1,12 +1,12 @@
 ﻿[Setup]
 AppId={{ACE98A5E-9CB1-41C0-B507-6249D0E142E8}
 AppName=Velixa
-AppVersion=0.4.0
+AppVersion=0.5.0
 AppPublisher=Velixa
 DefaultDirName={autopf}\Velixa
 DefaultGroupName=Velixa
 OutputDir=..\dist
-OutputBaseFilename=Velixa-0.4.0-Windows-Setup
+OutputBaseFilename=Velixa-0.5.0-Windows-Setup
 SetupIconFile=..\build\windows\velixa.ico
 UninstallDisplayIcon={app}\Velixa.exe
 Compression=lzma2
@@ -22,6 +22,7 @@ DisableProgramGroupPage=yes
 Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 Name: "startup"; Description: "Open Velixa when I sign in to Windows"; Flags: checkedonce
 [Files]
+Source: "..\build\windows\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\Velixa.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\Velixa.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\velixa.ico"; DestDir: "{app}"; Flags: ignoreversion

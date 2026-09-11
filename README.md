@@ -1,66 +1,97 @@
-# Velixa 0.4.0 Preview
+# Velixa
 
-Use one keyboard and mouse across Windows PCs and Android screens on your local network. No account, internet activation, or cloud relay is required.
+Share a keyboard, mouse, clipboard, files and microphone across your local desk. Windows PCs can control Windows and Android devices without an account or cloud relay.
 
-## Install and pair
+**[Download Windows and Android 0.5.0](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.0-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
 
-1. Install the Windows setup on each PC and the signed APK on Android.
-2. On one PC, choose **Create my desk**, then **Add device**.
-3. Another Windows PC finds the desk automatically. Enter the four-digit code shown on the first PC.
-4. On Android, enable Velixa continuity in Accessibility, then tap **Scan QR code**. Scan the Android tab in the Windows pairing dialog.
-5. Drag screens left, right, above, or below to match your desk. Move your pointer across an edge to switch.
+![Velixa desk with aligned controls, gold local screen and blue remote screens](docs/desk.png)
 
-Upgrade all devices together and pair them once again when moving from 0.1 to 0.2. Pairing has changed and the old shared code is no longer used.
+## Set up your desk
 
-## Desks, sleep and screen sizes
+1. Install the Windows EXE on each PC. Install the APK on Android.
+2. On one Windows PC, choose **Create my desk**, then **Add device**. This PC coordinates the desk and must stay awake.
+3. On another Windows PC, find the desk and enter its four-digit pairing code.
+4. On Android, enable Velixa continuity in Accessibility, then scan the QR code shown under **Add device > Android** on the PC.
+5. Arrange the screens to match your physical desk. Move the pointer across a touching edge to switch devices.
 
-- Click the desk name on Windows to create, switch, rename or delete a saved desk. Each desk keeps its own arrangement, screen sizes and manual sleep states, using the same paired devices. Up to 12 desk layouts can be saved.
-- Click or right-click a Windows device card, or tap a card on Android, to put it to sleep in Velixa. This excludes it from input sharing without disconnecting or putting the operating system to sleep. Choose Wake in Velixa when ready; manual sleep stays set across reconnects.
-- Android reports display sleep on heartbeats. Windows reports display power and suspend/resume changes. Offline devices remain on the desk; manual sleep is available when a device does not report its state correctly.
-- Choose Adjust screen size to scale the device from 25% to 300% while keeping its proportions. Windows includes phone, tablet, laptop and large-monitor presets. Newly paired Android screens start smaller.
-- Drag screens to snap their edges together without overlap. Multiple screens may share any side of a larger screen; only each touching segment transfers input. Colored layout edges show the destinations. Entry and exit lights follow the shared segment.
+Upgrade all devices to 0.5.0 for this release. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
 
-Update all Windows PCs, including the coordinator, to 0.4.0 for the input fixes and sharing features. Android 0.3.0 remains compatible. Existing 0.2 pairings are retained. Multiple desks are saved layouts managed by the same coordinator; they do not create additional coordinators.
+## Everyday controls
 
-## Everyday use
+- **Automatic input** lets you use any connected PC's keyboard or mouse without a switching popup. Choose a fixed source from **Change** if preferred.
+- **Ctrl + Alt + Backspace** returns the pointer to the current source PC.
+- Closing or minimizing the window keeps Velixa running in the tray. Double-click its tray icon to reopen; choose **Quit** to stop.
+- Use the desk-name menu to create, rename, switch or delete saved arrangements. Up to 12 layouts share the same paired devices and coordinator.
+- Click a device or its name to put it to sleep in Velixa, wake it, adjust its size, or forget it. Sleep keeps pairing. Forget removes it from all saved layouts and requires pairing again.
+- Screen shapes retain their proportions and snap without overlap. Multiple smaller screens can share separate segments of any larger screen's edge.
+- Gold identifies the device you are using; other devices are blue. Full names beneath the arrangement remain readable even for narrow phone screens. Use **+**, **−** and **Fit** to change the view.
 
-- **Automatic — use any PC’s mouse or keyboard** is the default. Deliberate physical mouse movement, a click or a keypress transfers the input source without a prompt. Android remains receive-only.
-- Use **Change** beside the input source to select a fixed Windows PC instead. This choice applies across the desk until Automatic is selected again.
-- Offline devices keep their positions and appear dimmed. Returning Windows receivers reconnect to their saved, certificate-pinned desk without a prompt.
-- Minimizing or closing the Windows window leaves Velixa running in the system tray. Double-click the tray icon to reopen it. Quit from its tray menu to stop it. The installer offers startup at Windows sign-in.
-- **Ctrl + Alt + Backspace** returns input to the current source laptop.
-- Edge-light previews and leaving a desk are under **Settings**.
-- Android keeps the monochrome icon; Windows uses the supplied mark on white.
+## Clipboard and files
 
-The PC that created the desk coordinates traffic and must remain awake, including when another laptop is the input source. This preview does not migrate the coordinator automatically.
+Windows text and image clipboard changes are shared with available Windows peers. Settings can disable clipboard sharing or incoming files. Clipboard payloads are limited to 16 MB.
 
-## Clipboard, files and microphone
+Drop files directly onto the destination Windows screen card. They arrive in **Downloads/Velixa**. A bottom-right panel shows progress, speed and cancellation. Existing files are not overwritten; completed file content is verified with SHA-256. Dropping onto empty space sends nothing.
 
-These features work between Windows PCs running 0.4.0. Android 0.3.0 remains compatible for input control.
+Folder transfers, Android file/clipboard sharing and direct Explorer-to-Explorer drag-and-drop are not included.
 
-- Text and images copied after Velixa starts are shared automatically with available Windows peers. Turn clipboard sharing off in Settings if desired. Clipboard payloads are limited to 16 MB.
-- Drag files onto an available Windows device card. They arrive in Downloads/Velixa on that PC. A bottom-right panel shows progress, speed and cancellation. Existing files are not overwritten. Folder transfers and dragging directly into another PC's Explorer window are not supported.
-- Open Settings > Microphone sharing. On the receiving PC, enable incoming microphone audio and choose an output device. On the source PC, choose the microphone and destination, then Start. Stop ends the stream. Receiving permission starts off each time Velixa launches.
-- To use shared audio as a microphone in another application, install a virtual audio cable separately on the receiver: select its playback endpoint (for VB-CABLE, CABLE Input) in Velixa, then its recording endpoint (CABLE Output) as the application's microphone. Without a virtual cable, incoming audio plays through the selected speakers or headphones. No virtual microphone driver is bundled. See https://vb-audio.com/Cable/.
+## Microphones
 
-Transfers use the existing authenticated, encrypted connection. File contents are checked with SHA-256 before completion. Microphone audio is streamed without recording it to disk. Camera sharing is not included.
+The microphone menu lists available inputs with their source device, such as **USB microphone · Model name (VOSTRO)** or **System microphone · Motorola (Motorola)**. Hardware names come from the operating system; device-type labels use the information available from its drivers. Lists refresh approximately every five seconds.
 
-## Security
+### Share a Windows microphone
 
-Windows pairing uses Bouncy Castle SRP-6a with the RFC 5054 2048-bit group and SHA-256, bound to the TLS certificate and device identities. Four-digit codes last two minutes, allow at most five attempts, and are invalidated after successful pairing. Android QR codes carry a single-use 256-bit token and a certificate fingerprint; the app verifies that fingerprint before sending authentication.
+1. On each receiving PC, open **Settings > Microphone sharing**, enable incoming audio, and select the receiving output.
+2. On the source PC, choose a microphone from the main microphone menu. One capture stream is sent to all available compatible Windows receivers that accept it.
+3. To select that microphone from another PC instead, first enable **Allow paired PCs to request this PC's microphone** on the source. This permission lasts for the current app session.
+4. Choose **Microphone off** to stop sharing or receiving on that PC.
 
-Successful pairing creates a distinct 256-bit credential for each device. Reconnection verifies the saved certificate and device-bound proofs. Windows stores credentials with DPAPI; Android uses Keystore-backed AES-GCM. Input is accepted only from the selected Windows source and its current session epoch. Android cannot originate input. Network discovery exposes device names and IDs on the LAN. Input is not logged.
+### Use an Android microphone on PCs
 
-TCP 37128 carries TLS 1.2. UDP 37129 handles discovery. Windows firewall rules restrict inbound traffic to the local subnet on Private networks. Guest-network isolation or corporate firewall rules may block connections.
+Open Velixa on Android and tap **Enable microphone sharing to PCs**. Grant microphone permission. A foreground notification remains visible and provides Stop. Choose the phone's input from the microphone menu on a PC with incoming audio enabled. Other available Windows receivers can accept the same stream.
 
-## Platform limits
+Android sends microphone audio only; it does not play a Windows microphone into phone calls. This app does not emulate a Bluetooth headset or replace Android's telephony microphone. USB/Bluetooth inputs already exposed by the operating system may be listed; routing depends on the device and driver.
 
-Android 13+ typing uses Accessibility input connections. Android 8–12 also needs the included Velixa keyboard selected for typing. Android may require Allow restricted settings in App info for a sideloaded APK. No ADB, root, or Shizuku is used by the app.
+### Select shared audio in Teams, Zoom or another Windows app
 
-Android gestures are replayed through Accessibility; they are not an unrestricted hardware mouse driver. Drags replay on release. Games, protected fields, and some shortcuts may behave differently. Android touch input never leaves Android. Windows secure desktops, login screens, and elevated applications are outside this non-elevated preview's scope. Windows monitors are treated as a combined desktop for switching between machines.
+A normal Windows application cannot create a system-wide microphone endpoint by itself. Install a virtual audio cable separately on each receiving PC if you need this:
 
-The Windows installer is not Authenticode signed. The APK is release-signed with the existing project signing identity. Manual multi-device acceptance remains separate from automated verification.
+- In Velixa, select the cable's playback endpoint, such as **CABLE Input**, as the receiving output.
+- In the calling/recording app, select the cable's recording endpoint, such as **CABLE Output**, as its microphone.
 
-## Build
+[VB-CABLE setup](https://vb-audio.com/Cable/) is one option and has its own license. No virtual audio driver is bundled. Selecting speakers/headphones instead plays the stream aloud. On the microphone's own PC, choose the actual hardware input directly in your calling app. Audio is streamed, not saved to disk by Velixa.
 
-Run `build.ps1` with Java 17, Android SDK/build-tools, the Windows .NET Framework 4.8 compiler, and Inno Setup available. The application dependencies are bundled; installed apps download no packages. Signing material remains outside the source directory. GitHub contains only installers.
+## Privacy and networking
+
+Pairing creates separate credentials for each device. Windows uses DPAPI and Android uses Android Keystore-backed storage. TLS connections verify the paired coordinator certificate; the coordinator authenticates each reconnecting device. Pairing codes are short-lived and rate-limited, and QR tokens are single-use.
+
+The app uses TCP 37128 and UDP 37129 on your LAN. Windows firewall rules allow the local subnet on Private networks. Guest Wi-Fi isolation or corporate firewalls may prevent discovery. Device names and IDs are visible in LAN discovery. Clipboard/file/audio content travels over the paired encrypted connection. No account, cloud relay, advertising or input logging is required.
+
+Android camera permission is used only for QR scanning. Microphone permission is used only for the user-enabled microphone service. Camera sharing is not included.
+
+## Platform boundaries
+
+Android input is replayed through Accessibility, with its operating-system limits. Android 8–12 also needs the included Velixa keyboard for typing. Some devices require allowing restricted settings for sideloaded Accessibility services. No ADB, root or Shizuku is required for normal use.
+
+Windows secure desktops, login screens and elevated applications are outside this non-elevated app's control. Each Windows machine's monitors are treated as one combined desktop. The coordinator must remain awake; automatic coordinator migration is not implemented.
+
+Automated validation does not establish compatibility with every physical PC, phone, microphone, driver or calling app. See [test coverage and remaining acceptance checks](TESTING.md).
+
+## Build from source
+
+On Windows, install PowerShell 7, .NET Framework 4.8, Inno Setup 6, JDK 17, and an Android SDK with platform 35 or later plus current stable build-tools. Put Java tools on PATH. Dependencies and their notices are included in `deps/`.
+
+```powershell
+./build.ps1 -AndroidSdk "C:/path/to/Android/Sdk"
+# Windows only:
+./build.ps1 -WindowsOnly
+# Automated Windows QA:
+./tests/run-tests.ps1
+```
+
+Artifacts are written to `dist/`. Android signing keys are created or reused under `%LOCALAPPDATA%/Velixa/build-signing`, outside the repository, with the password protected by DPAPI. Keep that directory private and backed up if you maintain your own Android releases; a different signing key cannot upgrade the official APK in place.
+
+Production settings live under `%LOCALAPPDATA%/Velixa`. Test harnesses require `TESTING` and an explicit isolated `VELIXA_TEST_DATA` directory; tests use different network ports and refuse the production settings path. Preview and self-test app modes also use isolated storage.
+
+## License
+
+Velixa is licensed under the **MIT License**: you may use, modify, redistribute and sell it, including commercially, while retaining the copyright and permission notice. It is provided without warranty. Third-party dependencies retain their own licenses, listed in [third-party notices](assets/THIRD-PARTY-NOTICES.txt). External audio drivers are not part of this project.

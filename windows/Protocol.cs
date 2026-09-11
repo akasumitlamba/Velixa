@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -33,9 +34,17 @@ public static class Wire {
  public static string ReadLine(StreamReader r) { var b=new StringBuilder();int c;while((c=r.Read())!=-1){if(c==10)return b.ToString();if(c!=13)b.Append((char)c);if(b.Length>16384)throw new IOException("Message too large");}throw new EndOfStreamException(); }
  public static string DataDir { get {
 #if TESTING
- var test=Environment.GetEnvironmentVariable("VELIXA_TEST_DATA");if(!String.IsNullOrEmpty(test)){Directory.CreateDirectory(test);return test;}
+ var test=Environment.GetEnvironmentVariable("VELIXA_TEST_DATA");
+ if(String.IsNullOrWhiteSpace(test))throw new InvalidOperationException("Test storage is required. Run tests/run-tests.ps1.");
+ var resolved=Path.GetFullPath(test);var production=Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Velixa"));
+ if(resolved.Equals(production,StringComparison.OrdinalIgnoreCase)||resolved.StartsWith(production+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Tests cannot use production storage.");
+ Directory.CreateDirectory(resolved);return resolved;
+#else
+ if(System.Reflection.Assembly.GetEntryAssembly().GetName().Name!="Velixa")throw new InvalidOperationException("Test harnesses must be compiled with TESTING.");
+ if(Environment.GetCommandLineArgs().Any(a=>a=="--self-test"||a.StartsWith("--render")||a=="--preview-desk")){var isolated=Path.Combine(Path.GetTempPath(),"Velixa-preview-"+System.Diagnostics.Process.GetCurrentProcess().Id);Directory.CreateDirectory(isolated);return isolated;}
+var p=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Velixa");Directory.CreateDirectory(p);return p;
 #endif
- var p=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Velixa");Directory.CreateDirectory(p);return p; } }
+ } }
  public static void SaveSecret(string name,string value) { File.WriteAllBytes(Path.Combine(DataDir,name),ProtectedData.Protect(Encoding.UTF8.GetBytes(value),null,DataProtectionScope.CurrentUser)); }
  public static string LoadSecret(string name,string fallback) { try{return Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(Path.Combine(DataDir,name)),null,DataProtectionScope.CurrentUser));}catch{return fallback;} }
  public static X509Certificate2 Certificate() {
@@ -94,12 +103,13 @@ public class Network : IDisposable {
    p.Writer.WriteLine(Wire.Json(new{t="proof",m=srp.CalculateServerEvidenceMessage().ToString(16)}));string k=srp.CalculateSessionKey().ToString(16);var confirmation=Wire.Parse(Wire.ReadLine(p.Reader));if(!Wire.Equal(Wire.S(confirmation,"proof"),Wire.Mac(k,basis+"|confirm")))throw new IOException();
    lock(gate){if(Code!=pin||DateTime.UtcNow>PairUntil)throw new IOException();ClosePairing();}token=Wire.RandomHex(32);
   }else throw new IOException();
-  lock(gate){trusted[p.Id]=token;Wire.SaveSecret("trusted-v2.bin",Wire.Json(trusted));}
+  lock(gate){string currentToken;if(mode=="resume"&&(!trusted.TryGetValue(p.Id,out currentToken)||!Wire.Equal(currentToken,token)))throw new IOException("Pairing was removed");trusted[p.Id]=token;Wire.SaveSecret("trusted-v2.bin",Wire.Json(trusted));
   p.Sharing=Wire.I(a,"sharing")==1;p.Width=Math.Max(100,Math.Min(16000,Wire.I(a,"w",1920)));p.Height=Math.Max(100,Math.Min(16000,Wire.I(a,"h",1080)));
-  foreach(var old in Snapshot())if(old.Id==p.Id)old.Dispose();lock(Peers){if(Peers.Count>=12)throw new IOException();Peers.Add(p);}p.OnClosed=q=>{lock(Peers)Peers.Remove(q);if(Left!=null)Left(q);};
+  foreach(var old in Snapshot())if(old.Id==p.Id)old.Dispose();lock(Peers){if(Peers.Count>=12)throw new IOException();Peers.Add(p);}p.OnClosed=q=>{lock(Peers)Peers.Remove(q);if(Left!=null)Left(q);};}
   p.Writer.WriteLine(Wire.Json(new{t="ready",token=mode=="resume"?"":token,proof=Wire.Mac(token,basis+"|server")}));p.StartWriter();if(Joined!=null)Joined(p);
   while(!p.Closed){var m=Wire.Parse(Wire.ReadLine(p.Reader));p.Seen=DateTime.UtcNow;if(Wire.S(m,"t")=="size"){p.Width=Math.Max(100,Math.Min(16000,Wire.I(m,"w",1920)));p.Height=Math.Max(100,Math.Min(16000,Wire.I(m,"h",1080)));}if(Packet!=null)Packet(p,m);}
  }catch{}finally{if(p!=null)p.Dispose();else tcp.Close();}}
+ public void Forget(string id){if(!IsHost||id==LocalId)return;lock(gate){trusted.Remove(id);Wire.SaveSecret("trusted-v2.bin",Wire.Json(trusted));}foreach(var peer in Snapshot().Where(p=>p.Id==id))peer.Dispose();}
  public Peer[] Snapshot(){lock(Peers)return Peers.ToArray();}
  public void Send(object m){if(uplink!=null)uplink.Send(m);}
  public void Connect(string host,string pin,int width,int height){Running=true;Task.Run(async()=>{bool paired=false,declined=false,allowed=false;string token=pin.Length==4?"":Wire.LoadSecret("remote-token-v2.bin",""),fp=pin.Length==4?"":Wire.LoadSecret("remote-fp-v2.bin","");

@@ -1,4 +1,0 @@
-Final branding uses the user's supplied three-panel logo. The initial V concept is superseded.
-Transparent derivative generated with the built-in image generation tool.
-Prompt: Edit target: supplied Velixa logo. Remove only the white background and make it genuinely transparent with alpha. Preserve exactly the three separate rounded perspective panels, their shapes, locations, proportions, spacing and existing cyan blue purple gradient colors. No added background, no shadows, no text, no tile, no redesign. Output the isolated identical logo on a fully transparent canvas.
-Android monochrome: native vector rendition of the supplied three-panel silhouette, used as a tintable Material-themed icon mask. The color image's generated size is 1254 x 1254 with RGBA transparency.

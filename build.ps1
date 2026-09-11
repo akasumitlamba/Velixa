@@ -2,16 +2,20 @@
 $ErrorActionPreference = 'Stop'
 $project = $PSScriptRoot
 Set-Location -LiteralPath $project
-if (!$AndroidSdk) { $AndroidSdk = 'C:/Users/sumit/OneDrive/Documents/ChatGPT/AniBrowser/.tools/sdk' }
-$platform = Join-Path $AndroidSdk 'platforms/android-37.1/android.jar'
-$androidTools = Join-Path $AndroidSdk 'build-tools/37.0.0'
+if (!$AndroidSdk) { $AndroidSdk = Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
+if (!$WindowsOnly) {
+ $platform = Get-ChildItem (Join-Path $AndroidSdk 'platforms') -Directory | Where-Object Name -Match '^android-\d+(\.\d+)?$' | Sort-Object { [version](($_.Name -replace '^android-','')+'.0') } -Descending | ForEach-Object {Join-Path $_.FullName 'android.jar'} | Select-Object -First 1
+ $androidTools = (Get-ChildItem (Join-Path $AndroidSdk 'build-tools') -Directory | Where-Object Name -Match '^\d+\.\d+\.\d+$' | Sort-Object {[version]$_.Name} -Descending | Select-Object -First 1).FullName
+ if (!$platform -or !$androidTools) {throw 'Install Android SDK platform 35 or later and build-tools; pass -AndroidSdk or set ANDROID_HOME.'}
+}
 function Run([string]$exe, [string[]]$arguments) { & $exe @arguments; if ($LASTEXITCODE -ne 0) { throw "$exe failed: $LASTEXITCODE" } }
 New-Item -ItemType Directory -Force build/windows,build/android/classes,dist,android/res/mipmap-mdpi,android/res/mipmap-anydpi-v26,android/res/mipmap-anydpi-v33 | Out-Null
 & (Join-Path $project 'assets/build-icons.ps1')
 Copy-Item deps/bc/lib/net461/BouncyCastle.Cryptography.dll build/windows/
 Copy-Item deps/qr/lib/net40/QRCoder.dll build/windows/
 $sources = Get-ChildItem windows -Filter *.cs | Select-Object -ExpandProperty FullName
-Run 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe' (@('/nologo','/target:winexe','/optimize+','/out:build/windows/Velixa.exe','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Web.Extensions.dll','/r:System.Security.dll','/r:System.Core.dll','/r:build/windows/BouncyCastle.Cryptography.dll','/r:build/windows/QRCoder.dll','/win32manifest:windows/app.manifest','/win32icon:build/windows/velixa.ico') + $sources)
+Run (Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe') (@('/nologo','/target:winexe','/optimize+','/out:build/windows/Velixa.exe','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Web.Extensions.dll','/r:System.Security.dll','/r:System.Core.dll','/r:build/windows/BouncyCastle.Cryptography.dll','/r:build/windows/QRCoder.dll','/win32manifest:windows/app.manifest','/win32icon:build/windows/velixa.ico') + $sources)
+Copy-Item LICENSE build/windows/LICENSE.txt
 Copy-Item windows/Velixa.exe.config build/windows/Velixa.exe.config
 Copy-Item assets/THIRD-PARTY-NOTICES.txt build/windows/THIRD-PARTY-NOTICES.txt
 if (!$WindowsOnly) {
@@ -43,9 +47,10 @@ if (!(Test-Path -LiteralPath $keyPath)) {
  [IO.File]::WriteAllBytes($passwordPath,[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($env:VELIXA_SIGN_PASSWORD),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser))
  Run 'keytool' @('-genkeypair','-keystore',$keyPath,'-storepass:env','VELIXA_SIGN_PASSWORD','-keypass:env','VELIXA_SIGN_PASSWORD','-alias','velixa','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Velixa Local Release','-noprompt')
 } else { $env:VELIXA_SIGN_PASSWORD = [Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($passwordPath),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser)) }
-try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.3.0-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
-Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.3.0-Android.apk')
+try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.5.0-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
+Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.5.0-Android.apk')
 }
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.4.0-Windows-Portable.zip -Force
-Get-Item dist/Velixa-0.4.0-Windows-Setup.exe,dist/Velixa-0.4.0-Windows-Portable.zip | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.4.0.txt
+Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.5.0-Windows-Portable.zip -Force
+$artifacts=@('dist/Velixa-0.5.0-Windows-Setup.exe','dist/Velixa-0.5.0-Windows-Portable.zip'); if (!$WindowsOnly) {$artifacts+='dist/Velixa-0.5.0-Android.apk'}
+Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.5.0.txt

@@ -38,7 +38,7 @@ try {
  if ($LASTEXITCODE -ne 0) {throw 'Encrypted sharing regression failed'}
 } finally { Remove-Item Env:VELIXA_TEST_DATA }
 
-foreach($harness in @('CaptionClickRegression','DialogRegression')) {
+foreach($harness in @('CaptionClickRegression','DialogRegression','DesktopQA')) {
  $env:VELIXA_TEST_DATA=Join-Path $PWD ('build/ui-tests-'+[guid]::NewGuid().ToString())
  try {
   $uiSources=@(Get-ChildItem windows -Filter *.cs | ForEach-Object FullName)+(Resolve-Path ('tests/'+$harness+'.cs')).Path

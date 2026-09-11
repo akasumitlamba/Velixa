@@ -1,11 +1,13 @@
-﻿param([string]$Serial="emulator-5580")
+﻿param([string]$Serial="emulator-5580", [string]$AndroidSdk=$env:ANDROID_HOME)
 $ErrorActionPreference='Stop'
 $project=Split-Path $PSScriptRoot -Parent
 Set-Location $project
-$env:PATH='C:/Program Files/Eclipse Adoptium/jdk-17.0.20.101-hotspot/bin;'+$env:PATH
-$sdk='C:/Users/sumit/OneDrive/Documents/ChatGPT/AniBrowser/.tools/sdk'
-$bt=Join-Path $sdk 'build-tools/37.0.0'
-$jar=Join-Path $sdk 'platforms/android-37.1/android.jar'
+if($Serial -notmatch '^emulator-') {throw 'Use a disposable emulator for instrumentation.'}
+if(!$AndroidSdk){$AndroidSdk=Join-Path $env:LOCALAPPDATA 'Android/Sdk'}
+$sdk=$AndroidSdk
+$bt=(Get-ChildItem (Join-Path $sdk 'build-tools') -Directory | Where-Object Name -Match '^\d+\.\d+\.\d+$' | Sort-Object {[version]$_.Name} -Descending | Select-Object -First 1).FullName
+$jar=Get-ChildItem (Join-Path $sdk 'platforms') -Directory | Sort-Object Name -Descending | ForEach-Object {Join-Path $_.FullName 'android.jar'} | Select-Object -First 1
+New-Item -ItemType Directory -Force build/android-test/classes,build/android-test/dex | Out-Null
 & "$bt/aapt2.exe" link -o build/android-test/base.apk -I $jar --manifest tests/android/AndroidManifest.xml
 & javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$jar;$bt/core-lambda-stubs.jar" -classpath 'build/android/classes.jar;deps/zxing.jar' -d build/android-test/classes tests/android/Smoke.java
 & jar cf build/android-test/classes.jar -C build/android-test/classes .
@@ -24,4 +26,6 @@ try{& "$bt/apksigner.bat" sign --ks (Join-Path $signDir 'android-release.keystor
 & "$sdk/platform-tools/adb.exe" -s $Serial push build/test-qr.png /data/local/tmp/velixa-qr.png
 $result = & "$sdk/platform-tools/adb.exe" -s $Serial shell am instrument -w -e image /data/local/tmp/velixa-qr.png com.velixa.tests/com.velixa.app.Smoke
 $result
-if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "10 Android checks passed") { throw "Android smoke checks did not pass" }
+if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "13 Android checks passed") { throw "Android smoke checks did not pass" }
+
+if(!(Test-Path build/android-mic-frames.txt) -or [int](Get-Content build/android-mic-frames.txt) -lt 8){throw 'Android microphone frames were not verified by the test coordinator'}

@@ -5,3 +5,16 @@ dist/
 *.keystore
 local.properties
 __pycache__/
+
+# Local state, signing credentials and editor files
+.env
+.env.*
+*.bin
+*.p12
+*.jks
+*.pem
+*.key
+*.log
+.vscode/
+.idea/
+assets/LOGO-PROMPT.txt
