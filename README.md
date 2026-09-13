@@ -1,4 +1,4 @@
-# Velixa
+## Velixa-Input sharing
 
 Share a keyboard, mouse, clipboard, files and microphone across your local desk. Windows PCs can control Windows and Android devices without an account or cloud relay.
 
