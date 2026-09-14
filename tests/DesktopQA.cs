@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Drawing;
@@ -22,7 +22,20 @@ d.Profile("rename","Renamed");Check(d.DeskName=="Renamed","rename changes active
  mic.Handle("peer",Wire.Parse(Wire.Json(new{kind="mic-list",id=Guid.NewGuid().ToString("N"),peerName="Motorola",mics=new[]{new{id=2,name="System microphone"}}})));Check(mic.RemoteMics["peer"].Count==1,"microphone list parses wire arrays");Check(outgoing.Count==0,"microphone discovery response does not echo");mic.Handle("peer",Wire.Parse(Wire.Json(new{kind="mic-request",id=Guid.NewGuid().ToString("N"),devId=0})));Check(!mic.Sending,"remote capture requires source permission");}
  var inputs=WaveAudio.Devices(true);if(inputs.Length>0){var queue=new ConcurrentQueue<Action>();var counts=new Dictionary<string,int>{{"one",0},{"two",0},{"three",0}};MicrophoneShare mic=null;mic=new MicrophoneShare((peer,o)=>{var m=Wire.Parse(Wire.Json(o));if(Wire.S(m,"kind")=="mic-begin")mic.Handle(peer,Wire.Parse(Wire.Json(new{kind="mic-accept",id=Wire.S(m,"id"),ok=true})));if(Wire.S(m,"kind")=="mic-data")counts[peer]++;},a=>queue.Enqueue(a),id=>true);using(mic){mic.StartMany(counts.Keys.ToArray(),inputs[0].Id);DateTime until=DateTime.UtcNow.AddSeconds(5);Action action;while(DateTime.UtcNow<until&&counts.Values.Min()<8){while(queue.TryDequeue(out action))action();Thread.Sleep(10);}Check(counts.Values.All(v=>v>=8),"one microphone reaches three PCs simultaneously");mic.StopSending();}}
  Application.EnableVisualStyles();using(var f=new MainForm(new[]{"--preview-desk"}){Opacity=0,ShowInTaskbar=false}){f.Show();Application.DoEvents();var canvas=(DeskCanvas)Get(f,"desk");var session=(DeskSession)Get(f,"session");session.Devices[1].name="Motorola";
- foreach(var size in new[]{new Size(1200,850),new Size(920,690)}){f.ClientSize=size;f.PerformLayout();Application.DoEvents();using(var bmp=new Bitmap(f.Width,f.Height)){f.DrawToBitmap(bmp,new Rectangle(0,0,bmp.Width,bmp.Height));bmp.Save("build/qa-layout-"+size.Width+".png");}var actions=new[]{(Control)Get(f,"sourceButton"),(Control)Get(f,"micButton"),(Control)Get(f,"pauseButton"),All(f).First(c=>c.Name=="Settings"),All(f).First(c=>c.Name=="AddDevice")};int right=actions[0].PointToScreen(new Point(actions[0].Width,0)).X;Check(actions.All(c=>c.Width==152&&c.Height==40&&c.PointToScreen(new Point(c.Width,0)).X==right&&c.Bottom<=c.Parent.ClientSize.Height),"main action column aligns and fits at "+size.Width);Check(canvas.Height>=290,"arrangement panel has usable height at "+size.Width);for(int i=0;i<session.Devices.Count;i++){var label=(RectangleF)canvas.GetType().GetMethod("Legend",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(canvas,new object[]{i});Check(label.Width>TextRenderer.MeasureText((i+1)+"  "+session.Devices[i].name,Visual.Font(14,true)).Width,"device name fits outside scaled shape: "+session.Devices[i].name);}Check(canvas.FindDropTarget(new Point(5,5))==null,"empty canvas drops have no recipient");}
+ foreach(var size in new[]{new Size(1642,920),new Size(1440,820),new Size(1200,850),new Size(920,690)}){
+ f.ClientSize=size;f.PerformLayout();Application.DoEvents();using(var bmp=new Bitmap(f.Width,f.Height)){f.DrawToBitmap(bmp,new Rectangle(0,0,bmp.Width,bmp.Height));bmp.Save("build/qa-layout-"+size.Width+".png");}
+ var actions=new[]{(Control)Get(f,"sourceButton"),(Control)Get(f,"micButton"),(Control)Get(f,"pauseButton"),All(f).First(c=>c.Name=="Settings"),All(f).First(c=>c.Name=="AddDevice")};
+ Check(actions.All(c=>c.Width>=36&&c.Height>=36&&c.Left>=0&&c.Right<=c.Parent.ClientSize.Width),"actions fit their panels at "+size.Width);
+ var headerActions=new[]{All(f).First(c=>c.Name=="AddDevice"),(Control)Get(f,"deskButton")};
+ Check(headerActions.All(button=>button.Parent.Controls.OfType<Label>().All(label=>!label.Bounds.IntersectsWith(button.Bounds))),"header labels cannot cover action buttons at "+size.Width);
+ Check(canvas.Width>=300&&canvas.Height>=270,"arrangement remains usable at "+size.Width);
+ Check(canvas.Bounds.IntersectsWith(((Control)Get(f,"deskButton")).Bounds)==false,"arrangement does not overlap header actions at "+size.Width);
+ foreach(var d in session.Devices){var card=canvas.Card(d);Check(card.Left>=0&&card.Right<=canvas.Width&&card.Top>=0&&card.Bottom<=canvas.Height,"device stays inside fitted canvas: "+d.name);}
+ Check(canvas.FindDropTarget(new Point(5,5))==null,"empty canvas drops have no recipient");
+ }
+ canvas.Selected=session.Devices[1];canvas.SelectionChanged();Check(((Label)Get(f,"selectedName")).Text.Contains(session.Devices[1].name),"selection updates device inspector");
+ bool wasPaused=(bool)Get(f,"paused");((Button)Get(f,"pauseButton")).PerformClick();Check((bool)Get(f,"paused")!=wasPaused,"pause button changes sharing state");((Button)Get(f,"pauseButton")).PerformClick();Check((bool)Get(f,"paused")==wasPaused,"resume restores sharing state");
+
  Check(DeskCanvas.DeviceColor(Network.LocalId).R>200&&DeskCanvas.DeviceColor("remote").B>200,"local gold and remote blue colors");Get(f,"session");f.GetType().GetField("closing",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(f,true);f.Close();}
  }
 }

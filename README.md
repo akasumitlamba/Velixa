@@ -2,7 +2,7 @@
 
 Share a keyboard, mouse, clipboard, files and microphone across your local desk. Windows PCs can control Windows and Android devices without an account or cloud relay.
 
-**[Download Windows and Android 0.5.1](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
+**[Download Windows 0.5.2](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.2-preview)** · **[Android 0.5.1](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
 
 ![Velixa desk with aligned controls, gold local screen and blue remote screens](docs/desk.png)
 
@@ -14,13 +14,13 @@ Share a keyboard, mouse, clipboard, files and microphone across your local desk.
 4. On Android, enable Velixa continuity in Accessibility, then scan the QR code shown under **Add device > Android** on the PC.
 5. Arrange the screens to match your physical desk. Move the pointer across a touching edge to switch devices.
 
-Upgrade all devices to 0.5.1 for this release. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
+Install Windows 0.5.2 for the redesigned desk interface. Android remains on 0.5.1. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
 
-Device boxes show large numbers. The numbered name list below the arrangement uses the same shared order on Windows and Android. Names on Android wrap to fit the available width.
+Windows device cards show platform icons, names and shared device numbers. Select a card to view its settings, or drag it to arrange your desk. Android uses the same device order.
 
 ## Everyday controls
 
-- **Automatic input** lets you use any connected PC's keyboard or mouse without a switching popup. Choose a fixed source from **Change** if preferred.
+- **Automatic input** lets you use any connected PC's keyboard or mouse without a switching popup. Choose a fixed source from **Input mode** if preferred.
 - **Ctrl + Alt + Backspace** returns the pointer to the current source PC.
 - Closing or minimizing the window keeps Velixa running in the tray. Double-click its tray icon to reopen; choose **Quit** to stop.
 - Use the desk-name menu to create, rename, switch or delete saved arrangements. Up to 12 layouts share the same paired devices and coordinator.

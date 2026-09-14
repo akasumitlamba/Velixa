@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -14,10 +14,10 @@ public static class Visual {
  public static void DarkTitle(Form f){try{int on=1;DwmSetWindowAttribute(f.Handle,20,ref on,4);}catch{}}
 }
 public class SoftButton:Button {
- public bool Primary;bool hover,pressed;
+ public string IconName;public bool Primary;bool hover,pressed;
  public SoftButton(){SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.SupportsTransparentBackColor,true);FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;BackColor=Color.Transparent;ForeColor=Color.White;Cursor=Cursors.Hand;Font=Visual.Font(14,true);Height=44;Width=160;}
  protected override void OnMouseEnter(EventArgs e){hover=true;Invalidate();base.OnMouseEnter(e);}protected override void OnMouseLeave(EventArgs e){hover=false;pressed=false;Invalidate();base.OnMouseLeave(e);}protected override void OnMouseDown(MouseEventArgs e){pressed=true;Invalidate();base.OnMouseDown(e);}protected override void OnMouseUp(MouseEventArgs e){pressed=false;Invalidate();base.OnMouseUp(e);}
- protected override void OnPaint(PaintEventArgs e){e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Color background=MainForm.Bg;for(Control c=Parent;c!=null;c=c.Parent){if(c is SoftPanel){background=((SoftPanel)c).FillColor;break;}if(c.BackColor.A==255){background=c.BackColor;break;}}e.Graphics.Clear(background);var r=new RectangleF(0,0,Width-1,Height-1);var color=Primary?(pressed?Color.FromArgb(115,99,223):hover?Color.FromArgb(155,137,255):MainForm.Accent):(pressed?Color.FromArgb(44,48,63):hover?Color.FromArgb(49,53,68):Color.FromArgb(37,41,55));Visual.Fill(e.Graphics,r,11,color);if(!Primary)Visual.Stroke(e.Graphics,r,11,Color.FromArgb(58,62,77));Visual.Text(e.Graphics,Text,r,14,Enabled?Color.FromArgb(246,245,252):MainForm.Muted,true,StringAlignment.Center);if(Focused&&ShowFocusCues)Visual.Stroke(e.Graphics,new RectangleF(3,3,Width-7,Height-7),8,Color.FromArgb(192,180,255));}
+ protected override void OnPaint(PaintEventArgs e){e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Color background=MainForm.Bg;for(Control c=Parent;c!=null;c=c.Parent){if(c is SoftPanel){background=((SoftPanel)c).FillColor;break;}if(c.BackColor.A==255){background=c.BackColor;break;}}e.Graphics.Clear(background);var r=new RectangleF(0,0,Width-1,Height-1);var color=Primary?(pressed?Color.FromArgb(115,99,223):hover?Color.FromArgb(155,137,255):MainForm.Accent):(pressed?Color.FromArgb(44,48,63):hover?Color.FromArgb(49,53,68):Color.FromArgb(37,41,55));Visual.Fill(e.Graphics,r,11,color);if(!Primary)Visual.Stroke(e.Graphics,r,11,Color.FromArgb(58,62,77));if(IconName!=null)UiIcons.Draw(e.Graphics,IconName,new RectangleF((Width-20)/2f,(Height-20)/2f,20,20),MainForm.Muted);Visual.Text(e.Graphics,Text,r,14,Enabled?Color.FromArgb(246,245,252):MainForm.Muted,true,StringAlignment.Center);if(Focused&&ShowFocusCues)Visual.Stroke(e.Graphics,new RectangleF(3,3,Width-7,Height-7),8,Color.FromArgb(192,180,255));}
 }
 public class DarkComboBox:ComboBox {
  public DarkComboBox(){DrawMode=DrawMode.OwnerDrawFixed;ItemHeight=28;FlatStyle=FlatStyle.Flat;BackColor=MainForm.PanelColor;ForeColor=Color.White;DropDownStyle=ComboBoxStyle.DropDownList;Font=Visual.Font(14);DropDownWidth=650;}
