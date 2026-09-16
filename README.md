@@ -1,8 +1,8 @@
-## Velixa-Input sharing
+﻿## Velixa-Input sharing
 
 Share a keyboard, mouse, clipboard, files and microphone across your local desk. Windows PCs can control Windows and Android devices without an account or cloud relay.
 
-**[Download Windows 0.5.2](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.2-preview)** · **[Android 0.5.1](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
+**[Download Windows 0.5.3](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.3-preview)** · **[Android 0.5.1](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)** · [License](LICENSE) · [Testing](TESTING.md) · [Contributing](CONTRIBUTING.md)
 
 ![Velixa desk with aligned controls, gold local screen and blue remote screens](docs/desk.png)
 
@@ -14,7 +14,7 @@ Share a keyboard, mouse, clipboard, files and microphone across your local desk.
 4. On Android, enable Velixa continuity in Accessibility, then scan the QR code shown under **Add device > Android** on the PC.
 5. Arrange the screens to match your physical desk. Move the pointer across a touching edge to switch devices.
 
-Install Windows 0.5.2 for the redesigned desk interface. Android remains on 0.5.1. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
+Install Windows 0.5.3 for the redesigned desk interface. Android remains on 0.5.1. Existing pairings are retained. Windows requires .NET Framework 4.8; Android requires Android 8 or later. The Windows installer is unsigned, so Windows may show an unknown-publisher warning. The APK uses the project's existing release signing identity.
 
 Windows device cards show platform icons, names and shared device numbers. Select a card to view its settings, or drag it to arrange your desk. Android uses the same device order.
 
