@@ -34,10 +34,16 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 
 ## Download
 
-- **Windows:** [Download Velixa 0.5.4 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)<br>
-  Requires Windows with .NET Framework 4.8. The installer is currently unsigned, so Windows may display an unknown-publisher warning.
-- **Android:** [Download Velixa 0.5.4 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)<br>
-  Requires Android 8 or later. The APK uses the project's existing release signing identity.
+| Download | Use |
+| --- | --- |
+| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Windows-Setup.exe) | Install Velixa on a Windows PC. |
+| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
+| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Android.apk) | Install or update Velixa on an Android device. |
+| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/SHA256SUMS-0.5.4.txt) | Verify the downloaded files. |
+
+Windows requires .NET Framework 4.8. The installer is unsigned, so Windows may display an unknown-publisher warning. Android requires Android 8 or later; the APK retains the project's existing signing identity for upgrades.
+
+See the [0.5.4 Preview release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview). This is a preview, with hardware-specific acceptance still required.
 
 ## Quick start
 
@@ -48,7 +54,21 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 5. Drag the screen cards into the same arrangement as your physical devices.
 6. Move the pointer across a touching screen edge to take control of the next device.
 
+If a pairing code expires, select **New pairing code** in the Windows pairing dialog. Both devices must be on the same reachable local network.
+
 ## Using your desk
+
+### Windows navigation
+
+| Page | What you can do |
+| --- | --- |
+| **My Desk** | Arrange device cards, select the input source, pause input sharing, toggle clipboard sharing, and zoom or fit the view. |
+| **Devices** | See device status, locate a device on the desk, adjust its screen size, include/exclude it from sharing, or forget a remote device. |
+| **Settings** | Change clipboard and incoming-file permissions, open received files, configure microphones, preview edge lights, or leave the desk. |
+| **Hotkeys** | Read the return shortcut and mouse/keyboard navigation guidance. |
+| **About** | See the app version, platform information, project links, and issue-reporting link. |
+
+Controls that require a connection or selected device are disabled until those requirements are met. Microphone selection also depends on compatible receivers and incoming-audio permission.
 
 ### Input and layouts
 
@@ -56,15 +76,23 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 - Press **Ctrl + Alt + Backspace** to return the pointer to the current source PC.
 - Closing or minimizing Velixa keeps it running in the system tray. Double-click the tray icon to reopen it, or select **Quit** to stop it.
 - Use the **Desks** menu to create, rename, switch, or delete layouts. Up to 12 layouts can share the same paired devices and coordinator.
-- Select a device to put it to sleep in Velixa, wake it, adjust its size, or forget it. Sleep preserves the pairing. Forget removes the device from every layout and requires it to be paired again.
+- Select a card, then use **Device actions**, or right-click it, to adjust its size or include/exclude it from input sharing. Excluding a device preserves its pairing and does not put the physical device to sleep. **Forget device** removes a remote device from every saved layout and requires pairing again.
 - Screen cards preserve their proportions and snap together without overlap. Multiple smaller screens can occupy different sections of a larger screen's edge.
 - Gold marks the local device; remote device borders are purple. Use **+**, **−**, and **Fit** to adjust the desk view.
+
+### Android layout
+
+Android uses the same navy-and-purple theme and logo as Windows. Setup shows **Enable continuity**, followed by **Scan QR code**. Once paired, the desk shows numbered screens with matching device names: drag a screen to arrange it, or tap it for input-sharing and size options.
+
+The microphone card appears after continuity is enabled and the device is paired. Starting microphone sharing requires a live connection; stopping an active service remains available. **Disconnect this device** asks for confirmation. **Controls & help** explains mouse mappings and the return shortcut.
+
+Android 8–12L also shows **Keyboard setup** with controls to enable and select the Velixa keyboard. Your normal touchscreen input remains local.
 
 ### Clipboard and files
 
 Text and image clipboard changes are shared between available Windows devices. Clipboard sharing and incoming files can be disabled in Settings. Clipboard payloads are limited to 16 MB.
 
-To transfer a file, drop it onto the destination Windows screen card. Transfers arrive in **Downloads/Velixa**, while a status panel shows progress, speed, and cancellation controls. Existing files are never overwritten, and completed content is verified with SHA-256.
+To transfer a file, drop it onto the destination Windows screen card. Transfers arrive in **Downloads/Velixa**; open it from **Settings > Open received files**. A status panel shows progress, speed, and cancellation controls. Existing files are never overwritten, and completed content is verified with SHA-256.
 
 The following are not currently supported:
 
@@ -75,7 +103,7 @@ The following are not currently supported:
 
 ## Microphone sharing
 
-Velixa lists available inputs with their source device, for example **USB microphone Â· Model name (VOSTRO)** or **System microphone (Motorola)**. The list refreshes approximately every five seconds.
+Velixa lists available inputs with their source device, for example **USB microphone · Model name (VOSTRO)** or **System microphone (Motorola)**. The list refreshes approximately every five seconds.
 
 Hardware names come from the operating system, while device-type labels depend on driver information. Android combines built-in routes into one system microphone and excludes telephony and virtual routes. Distinct USB, headset, and Bluetooth inputs remain selectable when exposed by the operating system.
 
@@ -121,7 +149,7 @@ On Android, camera permission is used only to scan pairing QR codes. Microphone 
 ## Current limitations
 
 - Android input is replayed through Accessibility and remains subject to Android's platform restrictions.
-- Android 8 through 12 also requires the included Velixa keyboard for typing.
+- Android 8 through 12L also requires the included Velixa keyboard for typing.
 - Some Android devices require **Allow restricted settings** for sideloaded Accessibility services.
 - Normal use does not require ADB, root, or Shizuku.
 - Windows secure desktops, sign-in screens, and elevated applications cannot be controlled by this non-elevated app.
@@ -129,7 +157,7 @@ On Android, camera permission is used only to scan pairing QR codes. Microphone 
 - The coordinator must remain awake. Automatic coordinator migration is not yet implemented.
 - Hardware and driver behavior varies. Automated validation cannot guarantee compatibility with every PC, phone, microphone, or calling app.
 
-For known coverage and remaining acceptance checks, see [Testing](TESTING.md).
+Version 0.5.4 passed Windows integration, sharing, and desktop checks; Android emulator pairing, reconnection, layout, scrolling, and microphone checks; and microphone-route and theme checks. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
 
 ## Build from source
 
@@ -155,7 +183,7 @@ Dependencies and their notices are included in `deps/`.
 ./tests/run-tests.ps1
 ```
 
-Build artifacts are written to `dist/`.
+Build artifacts are written to `dist/`. The build checks that the Android manifest, Windows assembly, and installer versions agree before packaging. Android displays its version from the installed package metadata.
 
 Android signing keys are created or reused under `%LOCALAPPDATA%/Velixa/build-signing`, outside the repository, with the password protected by DPAPI. Keep this directory private and backed up if you maintain Android releases. An APK signed with a different key cannot upgrade the official APK in place.
 
