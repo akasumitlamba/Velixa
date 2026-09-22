@@ -2,6 +2,13 @@
 $ErrorActionPreference = 'Stop'
 $project = $PSScriptRoot
 Set-Location -LiteralPath $project
+# Fail before packaging when platform or installer versions drift.
+[xml]$releaseManifest=Get-Content android/AndroidManifest.xml
+$releaseVersion=$releaseManifest.manifest.GetAttribute('versionName','http://schemas.android.com/apk/res/android')
+$assemblyVersion=[regex]::Match((Get-Content windows/AssemblyInfo.cs -Raw),'AssemblyFileVersion\("([^" ]+)"\)').Groups[1].Value
+$installerVersion=[regex]::Match((Get-Content windows/installer.iss -Raw),'(?m)^AppVersion=([^\r\n]+)').Groups[1].Value
+if($assemblyVersion -ne "$releaseVersion.0" -or $installerVersion -ne $releaseVersion){throw 'Windows, Android and installer versions must match.'}
+
 if (!$AndroidSdk) { $AndroidSdk = Join-Path $env:LOCALAPPDATA 'Android/Sdk' }
 if (!$WindowsOnly) {
  $platform = Get-ChildItem (Join-Path $AndroidSdk 'platforms') -Directory | Where-Object Name -Match '^android-\d+(\.\d+)?$' | Sort-Object { [version](($_.Name -replace '^android-','')+'.0') } -Descending | ForEach-Object {Join-Path $_.FullName 'android.jar'} | Select-Object -First 1
@@ -47,10 +54,10 @@ if (!(Test-Path -LiteralPath $keyPath)) {
  [IO.File]::WriteAllBytes($passwordPath,[Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($env:VELIXA_SIGN_PASSWORD),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser))
  Run 'keytool' @('-genkeypair','-keystore',$keyPath,'-storepass:env','VELIXA_SIGN_PASSWORD','-keypass:env','VELIXA_SIGN_PASSWORD','-alias','velixa','-keyalg','RSA','-keysize','3072','-validity','10000','-dname','CN=Velixa Local Release','-noprompt')
 } else { $env:VELIXA_SIGN_PASSWORD = [Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes($passwordPath),$null,[Security.Cryptography.DataProtectionScope]::CurrentUser)) }
-try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out','dist/Velixa-0.5.1-Android.apk','build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
-Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose','dist/Velixa-0.5.1-Android.apk')
+try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--ks-key-alias','velixa','--ks-pass','env:VELIXA_SIGN_PASSWORD','--key-pass','env:VELIXA_SIGN_PASSWORD','--out',"dist/Velixa-$releaseVersion-Android.apk",'build/android/aligned.apk') } finally { Remove-Item Env:VELIXA_SIGN_PASSWORD }
+Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose',"dist/Velixa-$releaseVersion-Android.apk")
 }
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-0.5.3-Windows-Portable.zip -Force
-$artifacts=@('dist/Velixa-0.5.3-Windows-Setup.exe','dist/Velixa-0.5.3-Windows-Portable.zip'); if (!$WindowsOnly) {$artifacts+='dist/Velixa-0.5.1-Android.apk'}
-Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-0.5.3.txt
+Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-$releaseVersion-Windows-Portable.zip -Force
+$artifacts=@("dist/Velixa-$releaseVersion-Windows-Setup.exe","dist/Velixa-$releaseVersion-Windows-Portable.zip"); if (!$WindowsOnly) {$artifacts+="dist/Velixa-$releaseVersion-Android.apk"}
+Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-$releaseVersion.txt

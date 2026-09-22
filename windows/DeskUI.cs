@@ -55,7 +55,7 @@ public partial class MainForm {
    int bottom=Math.Max(630,right.Height-48);pauseButton.SetBounds(0,bottom,panelW,48);micButton.SetBounds(12,282,navW-24,36);micLabel.SetBounds(18,325,navW-36,40);
    right.AutoScrollMinSize=new Size(0,678);right.AutoScroll=true;
 
-  };root.Resize+=(s,e)=>layout();layout();sectionHost=root;deskCenter=center;deskInspector=right;navItems=new[]{home,devices,settings,hotkeys,about};sectionPage=new SoftPanel{Visible=false,AutoScroll=true,FillColor=PanelColor};root.Controls.Add(sectionPage);root.Resize+=(s,e)=>LayoutSection();UpdateDesk();
+  };root.Resize+=(s,e)=>layout();layout();sectionHost=root;deskCenter=center;deskInspector=right;navItems=new[]{home,devices,settings,hotkeys,about};sectionPage=new ScrollSurface{Visible=false,AutoScroll=true,FillColor=PanelColor};root.Controls.Add(sectionPage);root.Resize+=(s,e)=>LayoutSection();UpdateDesk();
  }
  Label micLabel;
  SoftPanel InspectorPanel(Control parent,string title,string icon){var p=new SoftPanel{FillColor=PanelColor};parent.Controls.Add(p);p.Paint+=(s,e)=>{UiIcons.Draw(e.Graphics,icon,new RectangleF(18,20,22,22),Color.FromArgb(91,145,255));Visual.Text(e.Graphics,title,new RectangleF(55,15,p.Width-65,32),15,Color.White,true);};return p;}

@@ -4,11 +4,11 @@
 
 Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphones across a local desk. Move the pointer across the edge of one screen to control another Windows or Android device, with no account and no cloud relay.
 
-[![Latest Windows release](https://img.shields.io/badge/Windows-0.5.3_preview-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.3-preview)
-[![Latest Android release](https://img.shields.io/badge/Android-0.5.1_preview-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)
+[![Latest Windows release](https://img.shields.io/badge/Windows-0.5.4_preview-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)
+[![Latest Android release](https://img.shields.io/badge/Android-0.5.4_preview-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F4B942.svg)](LICENSE)
 
-![Velixa desk with aligned controls, gold local screen and blue remote screens](docs/desk.png)
+![Velixa desk with aligned controls, gold local screen and purple remote screens](docs/desk.png)
 
 ## Why Velixa?
 
@@ -30,13 +30,13 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 | Receive microphone audio | Yes | No |
 
 > [!NOTE]
-> Windows 0.5.3 includes the redesigned desk interface. Android remains on 0.5.1, and existing pairings are retained when upgrading.
+> Windows and Android are aligned at 0.5.4. This update fixes Windows scrolling backgrounds and gives Android a matching dark theme and cleaner layout. Existing pairings are retained.
 
 ## Download
 
-- **Windows:** [Download Velixa 0.5.3 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.3-preview)<br>
+- **Windows:** [Download Velixa 0.5.4 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)<br>
   Requires Windows with .NET Framework 4.8. The installer is currently unsigned, so Windows may display an unknown-publisher warning.
-- **Android:** [Download Velixa 0.5.1 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.1-preview)<br>
+- **Android:** [Download Velixa 0.5.4 Preview](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)<br>
   Requires Android 8 or later. The APK uses the project's existing release signing identity.
 
 ## Quick start
@@ -55,10 +55,10 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 - **Automatic input** lets any connected Windows PC's keyboard or mouse become the active source without a switching popup. A fixed source can be selected from **Input mode**.
 - Press **Ctrl + Alt + Backspace** to return the pointer to the current source PC.
 - Closing or minimizing Velixa keeps it running in the system tray. Double-click the tray icon to reopen it, or select **Quit** to stop it.
-- Use the desk-name menu to create, rename, switch, or delete layouts. Up to 12 layouts can share the same paired devices and coordinator.
+- Use the **Desks** menu to create, rename, switch, or delete layouts. Up to 12 layouts can share the same paired devices and coordinator.
 - Select a device to put it to sleep in Velixa, wake it, adjust its size, or forget it. Sleep preserves the pairing. Forget removes the device from every layout and requires it to be paired again.
 - Screen cards preserve their proportions and snap together without overlap. Multiple smaller screens can occupy different sections of a larger screen's edge.
-- Gold marks the device currently in use; connected remote devices are blue. Use **+**, **âˆ’**, and **Fit** to adjust the desk view.
+- Gold marks the local device; remote device borders are purple. Use **+**, **−**, and **Fit** to adjust the desk view.
 
 ### Clipboard and files
 
@@ -81,7 +81,7 @@ Hardware names come from the operating system, while device-type labels depend o
 
 ### Share a Windows microphone
 
-1. On every receiving PC, open **Settings > Microphone sharing**, enable incoming audio, and select a receiving output.
+1. On every receiving PC, open **Settings > Configure microphone**, enable incoming audio, and select a receiving output.
 2. On the source PC, choose a microphone from the main microphone menu. The capture stream is sent to all compatible Windows receivers that accept it.
 3. To select that microphone from another PC, enable **Allow paired PCs to request this PC's microphone** on the source. This permission lasts for the current app session.
 4. Select **Microphone off** to stop sharing or receiving audio on that PC.

@@ -31,6 +31,15 @@ public class SoftPanel:Panel {
  public SoftPanel(){DoubleBuffered=true;BackColor=Color.Transparent;SetStyle(ControlStyles.ResizeRedraw,true);}
  protected override void OnPaintBackground(PaintEventArgs e){base.OnPaintBackground(e);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;Visual.Fill(e.Graphics,new RectangleF(0,0,Width,Height),Radius,FillColor);Visual.Stroke(e.Graphics,new RectangleF(.5f,.5f,Width-1,Height-1),Radius,Color.FromArgb(43,47,61));}
 }
+// Scrolling viewports must repaint a solid background; rounded transparent
+// backgrounds otherwise get copied along with the native scroll pixels.
+public class ScrollSurface:SoftPanel {
+ public ScrollSurface(){BackColor=MainForm.PanelColor;SetStyle(ControlStyles.Opaque|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer,true);}
+ protected override void OnPaintBackground(PaintEventArgs e){e.Graphics.Clear(FillColor);}
+ protected override void OnPaint(PaintEventArgs e){e.Graphics.Clear(FillColor);base.OnPaint(e);}
+ protected override void OnScroll(ScrollEventArgs e){base.OnScroll(e);Invalidate(true);}
+ protected override void WndProc(ref Message m){base.WndProc(ref m);if(m.Msg==0x115||m.Msg==0x114||m.Msg==0x20A)Invalidate(true);}
+}
 public class DarkMenuRenderer:ToolStripProfessionalRenderer {
  public DarkMenuRenderer():base(new DarkMenuColors()){}
  protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e){var r=new Rectangle(4,1,e.Item.Width-8,e.Item.Height-2);e.Graphics.SmoothingMode=SmoothingMode.AntiAlias;if(e.Item.Selected&&e.Item.Enabled)Visual.Fill(e.Graphics,new RectangleF(r.X,r.Y,r.Width,r.Height),6,Color.FromArgb(38,48,72));else using(var b=new SolidBrush(MainForm.PanelColor))e.Graphics.FillRectangle(b,r);}

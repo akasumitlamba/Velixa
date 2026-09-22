@@ -1,0 +1,14 @@
+package com.velixa.app;
+import android.app.*;import android.os.*;import android.content.*;import android.graphics.*;import java.io.*;
+public class Theme extends Instrumentation {
+ public void onCreate(Bundle args){start();}
+ public void onStart(){Bundle result=new Bundle();try{
+ MainActivity activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();Thread.sleep(1000);
+ runOnMainSync(()->{activity.timer.removeCallbacks(activity.refresh);activity.setup.setVisibility(android.view.View.VISIBLE);activity.pair.setVisibility(android.view.View.GONE);activity.connectionCard.setVisibility(android.view.View.GONE);activity.microphoneCard.setVisibility(android.view.View.GONE);activity.subtitle.setText("Enable continuity to connect this screen.");});waitForIdleSync();capture("theme-setup.png");
+ runOnMainSync(()->{activity.setup.setVisibility(android.view.View.GONE);activity.pair.setVisibility(android.view.View.VISIBLE);activity.subtitle.setText("Connect your main Windows PC.");});waitForIdleSync();capture("theme-pair.png");
+ runOnMainSync(()->{try{InputService.deskDevices=new org.json.JSONArray("[{\"id\":\"pc\",\"name\":\"Work laptop\",\"kind\":\"Windows\",\"w\":1920,\"h\":1080,\"x\":0,\"y\":0,\"online\":true},{\"id\":\"phone\",\"name\":\"Android phone\",\"kind\":\"Android\",\"w\":1080,\"h\":2400,\"x\":220,\"y\":0,\"online\":true}]");activity.timer.removeCallbacks(activity.refresh);activity.setup.setVisibility(android.view.View.GONE);activity.pair.setVisibility(android.view.View.GONE);activity.connectionCard.setVisibility(android.view.View.VISIBLE);activity.microphoneCard.setVisibility(android.view.View.VISIBLE);activity.status.setText("Connected to Work laptop");activity.subtitle.setText("Drag to arrange. Tap a device for options.");activity.refreshDeviceNames();activity.desk.invalidate();if(activity.bg!=0xFF0D121B||activity.accent!=0xFF7461FF)throw new AssertionError("Theme mismatch");if(activity.deviceNames.getText().length()==0)throw new AssertionError("Device names missing");}catch(Exception e){throw new RuntimeException(e);}});waitForIdleSync();Thread.sleep(600);capture("theme-desk.png");
+ runOnMainSync(()->((android.widget.ScrollView)activity.root.getParent()).fullScroll(android.view.View.FOCUS_DOWN));waitForIdleSync();Thread.sleep(500);capture("theme-bottom.png");
+ result.putString("stream","PASS Android theme, setup, connected layout and scrolled view rendered\n");finish(Activity.RESULT_OK,result);
+ }catch(Throwable e){result.putString("stream","FAIL "+e.toString());finish(Activity.RESULT_CANCELED,result);}}
+ void capture(String name)throws Exception{Bitmap bitmap=getUiAutomation().takeScreenshot();File file=new File(getTargetContext().getExternalFilesDir(null),name);try(FileOutputStream out=new FileOutputStream(file)){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();}
+}
