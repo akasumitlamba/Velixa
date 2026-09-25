@@ -26,6 +26,6 @@ try{& "$bt/apksigner.bat" sign --ks (Join-Path $signDir 'android-release.keystor
 & "$sdk/platform-tools/adb.exe" -s $Serial push build/test-qr.png /data/local/tmp/velixa-qr.png
 $result = & "$sdk/platform-tools/adb.exe" -s $Serial shell am instrument -w -e image /data/local/tmp/velixa-qr.png com.velixa.tests/com.velixa.app.Smoke
 $result
-if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "16 Android checks passed") { throw "Android smoke checks did not pass" }
+if($LASTEXITCODE -ne 0 -or ($result -join "`n") -notmatch "22 Android checks passed") { throw "Android smoke checks did not pass" }
 
 if(!(Test-Path build/android-mic-frames.txt) -or [int](Get-Content build/android-mic-frames.txt) -lt 8){throw 'Android microphone frames were not verified by the test coordinator'}

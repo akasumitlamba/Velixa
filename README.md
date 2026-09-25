@@ -4,8 +4,8 @@
 
 Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphones across a local desk. Move the pointer across the edge of one screen to control another Windows or Android device, with no account and no cloud relay.
 
-[![Latest Windows release](https://img.shields.io/badge/Windows-0.5.4_preview-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)
-[![Latest Android release](https://img.shields.io/badge/Android-0.5.4_preview-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview)
+[![Latest Windows release](https://img.shields.io/badge/Windows-0.5.5_preview-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview)
+[![Latest Android release](https://img.shields.io/badge/Android-0.5.5_preview-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F4B942.svg)](LICENSE)
 
 ![Velixa desk with aligned controls, gold local screen and purple remote screens](docs/desk.png)
@@ -30,20 +30,20 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 | Receive microphone audio | Yes | No |
 
 > [!NOTE]
-> Windows and Android are aligned at 0.5.4. This update fixes Windows scrolling backgrounds and gives Android a matching dark theme and cleaner layout. Existing pairings are retained.
+> Windows and Android are aligned at 0.5.5. This update adds receiver-selected microphones, native Windows touchpad gesture forwarding, corrected edge feedback, and simpler controls. Existing pairings are retained. Offline reconnection stops after three attempts; use Retry connection when the other PC is back. Pause input, microphone selection, and Disconnect stay available across desk screens. Offline device removal is saved locally and synchronized when the coordinator returns.
 
 ## Download
 
 | Download | Use |
 | --- | --- |
-| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Windows-Setup.exe) | Install Velixa on a Windows PC. |
-| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
-| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/Velixa-0.5.4-Android.apk) | Install or update Velixa on an Android device. |
-| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.4-preview/SHA256SUMS-0.5.4.txt) | Verify the downloaded files. |
+| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Windows-Setup.exe) | Install Velixa on a Windows PC. |
+| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
+| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Android.apk) | Install or update Velixa on an Android device. |
+| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/SHA256SUMS-0.5.5.txt) | Verify the downloaded files. |
 
 Windows requires .NET Framework 4.8. The installer is unsigned, so Windows may display an unknown-publisher warning. Android requires Android 8 or later; the APK retains the project's existing signing identity for upgrades.
 
-See the [0.5.4 Preview release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.4-preview). This is a preview, with hardware-specific acceptance still required.
+See the [0.5.5 Preview release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview). This is a preview, with hardware-specific acceptance still required.
 
 ## Quick start
 
@@ -65,8 +65,7 @@ If a pairing code expires, select **New pairing code** in the Windows pairing di
 | **My Desk** | Arrange device cards, select the input source, pause input sharing, toggle clipboard sharing, and zoom or fit the view. |
 | **Devices** | See device status, locate a device on the desk, adjust its screen size, include/exclude it from sharing, or forget a remote device. |
 | **Settings** | Change clipboard and incoming-file permissions, open received files, configure microphones, preview edge lights, or leave the desk. |
-| **Hotkeys** | Read the return shortcut and mouse/keyboard navigation guidance. |
-| **About** | See the app version, platform information, project links, and issue-reporting link. |
+| **Help** | Find setup guidance, shortcuts, microphone/gesture requirements, version, and project links in one place. |
 
 Controls that require a connection or selected device are disabled until those requirements are met. Microphone selection also depends on compatible receivers and incoming-audio permission.
 
@@ -107,29 +106,36 @@ Velixa lists available inputs with their source device, for example **USB microp
 
 Hardware names come from the operating system, while device-type labels depend on driver information. Android combines built-in routes into one system microphone and excludes telephony and virtual routes. Distinct USB, headset, and Bluetooth inputs remain selectable when exposed by the operating system.
 
-### Share a Windows microphone
+### Choose the microphone used on this PC
 
-1. On every receiving PC, open **Settings > Configure microphone**, enable incoming audio, and select a receiving output.
-2. On the source PC, choose a microphone from the main microphone menu. The capture stream is sent to all compatible Windows receivers that accept it.
-3. To select that microphone from another PC, enable **Allow paired PCs to request this PC's microphone** on the source. This permission lasts for the current app session.
-4. Select **Microphone off** to stop sharing or receiving audio on that PC.
+On each Windows PC, use **My Desk > Microphone ▾** to choose a local microphone or one attached to a paired PC. Capture starts automatically on the selected source and stops when this PC releases it. No Share or Receive buttons are needed. Other PCs can select their own sources independently, and a PC can send and receive simultaneously.
+
+**Microphone off** stops this PC's selected input without interrupting microphones being used by other PCs. In **Settings > Microphone output**, the saved **Let paired PCs use this PC’s microphones** permission controls whether other paired PCs may request capture; it is enabled by default. Microphones are advertised while connected but captured only on request. Offline sources disappear from the menu; choose a source again after a disconnect.
 
 ### Use an Android microphone on Windows
 
-1. Open Velixa on Android and tap **Enable microphone sharing to PCs**.
+1. Open Velixa on Android and tap **Allow PCs to use microphone**.
 2. Grant microphone permission. A foreground notification remains visible and includes a **Stop** action.
-3. On a Windows PC with incoming audio enabled, choose the phone's input from the microphone menu.
+3. On a Windows PC, choose the phone's input from the microphone menu.
 
-The same Android stream can be received by other available Windows PCs. Android sends microphone audio only. It cannot play a Windows microphone into phone calls, emulate a Bluetooth headset, or replace Android's telephony microphone. USB and Bluetooth routing depends on the device and driver.
+Android sends a requested stream only to the selecting PC; other PCs select their inputs independently. Concurrent input routing remains subject to Android and audio-driver limitations. Android sends microphone audio only. It cannot play a Windows microphone into phone calls, emulate a Bluetooth headset, or replace Android's telephony microphone. USB and Bluetooth routing depends on the device and driver.
 
 ### Use shared audio in Teams, Zoom, or another app
 
 Standard Windows applications cannot create a system-wide microphone endpoint. To expose Velixa's incoming audio as a microphone, install a virtual audio cable separately on each receiving PC:
 
-1. In Velixa, select the cable's playback endpoint, such as **CABLE Input**, as the receiving output.
+1. Leave Velixa’s microphone output on **Automatic · virtual audio cable**. It finds **CABLE Input** automatically. If no cable is installed, Velixa explains the missing setup instead of playing through speakers.
 2. In the calling or recording app, select the cable's recording endpoint, such as **CABLE Output**, as its microphone.
 
-[VB-CABLE](https://vb-audio.com/Cable/) is one option and is distributed under its own license. Velixa does not bundle a virtual audio driver. Selecting speakers or headphones as the receiving output plays the stream aloud. On the source PC, select the physical microphone directly in the calling app. Velixa streams audio and does not save it to disk.
+[VB-CABLE](https://vb-audio.com/Cable/) is one option and is distributed under its own license. Velixa does not bundle a virtual audio driver. Selecting speakers or headphones as the receiving output plays the stream aloud. Local microphone selections also feed the cable, so your calling app can keep **CABLE Output** selected when you change sources in Velixa. Velixa streams audio and does not save it to disk.
+
+## Trackpad gestures and screen edges
+
+On updated Windows 11 PCs with Precision Touchpad APIs, Velixa forwards two-finger gesture contacts (scroll and pinch), three- and four-finger swipes, and three- and four-finger taps/presses. Windows on the **receiving PC** interprets the contacts using its own gesture settings. Both PCs need the updated Velixa build and compatible Windows APIs. During remote control, Velixa takes foreground focus on the source PC to capture system gestures and restores its previous foreground window on return.
+
+Older Windows versions and legacy touchpad drivers retain keyboard, mouse, and wheel forwarding; receiver-configured multi-finger gestures need the newer APIs. Horizontal and high-resolution wheel deltas are preserved. Physical hardware/driver acceptance remains separate from the synthetic gesture checks.
+
+Edge lighting follows actual shared boundaries. Returning home, changing input source, or resetting a connection no longer flashes guessed left/right edges; rapid transitions replace old feedback. Gesture activity briefly holds off edge switching to avoid accidental handoffs.
 
 ## Privacy and networking
 
@@ -157,13 +163,13 @@ On Android, camera permission is used only to scan pairing QR codes. Microphone 
 - The coordinator must remain awake. Automatic coordinator migration is not yet implemented.
 - Hardware and driver behavior varies. Automated validation cannot guarantee compatibility with every PC, phone, microphone, or calling app.
 
-Version 0.5.4 passed Windows integration, sharing, and desktop checks; Android emulator pairing, reconnection, layout, scrolling, and microphone checks; and microphone-route and theme checks. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
+Version 0.5.5 includes Windows continuity and native gesture regressions alongside the integration, sharing, and desktop suites. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
 
 ## Build from source
 
 ### Requirements
 
-- Windows
+- Updated Windows 11 with Precision Touchpad API WinMetadata (for building the optional runtime bridge)
 - PowerShell 7
 - .NET Framework 4.8
 - Inno Setup 6

@@ -1,12 +1,12 @@
 ﻿[Setup]
 AppId={{ACE98A5E-9CB1-41C0-B507-6249D0E142E8}
 AppName=Velixa
-AppVersion=0.5.4
+AppVersion=0.5.5
 AppPublisher=Velixa
 DefaultDirName={autopf}\Velixa
 DefaultGroupName=Velixa
 OutputDir=..\dist
-OutputBaseFilename=Velixa-0.5.4-Windows-Setup
+OutputBaseFilename=Velixa-0.5.5-Windows-Setup
 SetupIconFile=..\build\windows\velixa.ico
 UninstallDisplayIcon={app}\Velixa.exe
 Compression=lzma2
@@ -30,6 +30,7 @@ Source: "..\build\windows\velixa-logo.png"; DestDir: "{app}"; Flags: ignoreversi
 Source: "..\build\windows\BouncyCastle.Cryptography.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\QRCoder.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\windows\Velixa.Touchpad.dll"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\Velixa"; Filename: "{app}\Velixa.exe"
 Name: "{autodesktop}\Velixa"; Filename: "{app}\Velixa.exe"; Tasks: desktopicon

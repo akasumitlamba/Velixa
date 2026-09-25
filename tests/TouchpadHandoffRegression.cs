@@ -1,0 +1,12 @@
+using System;
+using System.Linq;
+using System.Drawing;
+using System.Collections.Generic;
+using System.Windows.Forms;
+using Velixa;
+using Velixa.Touchpad;
+public class TouchpadHandoffRegression {
+ static int checks;static void Check(bool value,string text){if(!value)throw new Exception(text);checks++;Console.WriteLine("PASS "+text);}
+ [STAThread]static void Main(){var pointer=Cursor.Position;var foreground=Native.GetForegroundWindow();try{Run();Console.WriteLine(checks+" native source handoff checks passed");}catch(Exception e){Console.Error.WriteLine(e);Environment.ExitCode=1;}finally{Native.SetForegroundWindow(foreground);Cursor.Position=pointer;}}
+ static void Run(){Application.EnableVisualStyles();var packets=new List<Dictionary<string,object>>();using(var f=new Form{Text="Velixa handoff verification",Size=new Size(180,90),ShowInTaskbar=false})using(var input=new InputController()){f.Show();Native.SetForegroundWindow(f.Handle);input.Enabled=true;input.Select(new Peer{Kind="Windows",Touchpad=true,SendAction=o=>packets.Add(Wire.Parse(Wire.Json(o)))});Check(Native.GetForegroundWindow()!=f.Handle,"remote control focuses gesture capture surface");var p=new Interop.Parameters{Type=5,Count=5,Feedback=3,Width=10000,Height=6000,Options=3};IntPtr device=Interop.CreateSyntheticPointerDevice2(ref p);try{foreach(int count in new[]{2,3,4}){packets.Clear();var frame=Enumerable.Range(0,count).Select(i=>new Interop.TypeInfo{Type=5,Touch=new Interop.Touch{Info=new Interop.Info{Type=5,Id=(uint)i,Flags=0x4006,Physical=new Interop.Point{X=2500+i*1400,Y=3000}}}}).ToArray();for(int step=0;step<6;step++){for(int i=0;i<count;i++){if(step>0&&step<5)frame[i].Touch.Info.Physical.X+=250;if(step==5)frame[i].Touch.Info.Flags=0x4000;}Interop.InjectSyntheticPointerInput(device,frame,(uint)count);for(int t=0;t<25;t++){Application.DoEvents();System.Threading.Thread.Sleep(4);}}int captured=packets.Count(v=>Wire.S(v,"t")=="touchpad");Check(captured>=3,count+" finger contacts forwarded through production InputController");}}finally{Interop.DestroySyntheticPointerDevice(device);input.Home();Check(Native.GetForegroundWindow()==f.Handle,"return home restores previous foreground window");input.Select(new Peer{Kind="Windows",Touchpad=true,SendAction=o=>packets.Add(Wire.Parse(Wire.Json(o)))});Native.SetForegroundWindow(f.Handle);for(int t=0;t<50;t++){Application.DoEvents();System.Threading.Thread.Sleep(5);}Check(input.Active==null,"focus loss stops remote control before local gestures can be mistaken for remote");f.Close();}}}
+}

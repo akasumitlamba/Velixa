@@ -48,3 +48,23 @@ foreach($harness in @('CaptionClickRegression','DialogRegression','DesktopQA')) 
   if ($LASTEXITCODE -ne 0) {throw "$harness failed"}
  } finally { Remove-Item Env:VELIXA_TEST_DATA }
 }
+
+$env:VELIXA_TEST_DATA=Join-Path $PWD ('build/continuity-tests-'+[guid]::NewGuid().ToString())
+try {
+ $continuitySources=@('windows/Protocol.cs','windows/Input.cs','windows/Desk.cs','windows/Microphone.cs','tests/ContinuityRegression.cs') | ForEach-Object {(Resolve-Path $_).Path}
+ & 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe' /nologo /define:TESTING /out:build/windows/ContinuityRegression.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Web.Extensions.dll /r:System.Security.dll /r:build/windows/BouncyCastle.Cryptography.dll @continuitySources
+ if($LASTEXITCODE -ne 0){throw 'Continuity regression compilation failed'}
+ & ./build/windows/ContinuityRegression.exe
+ if($LASTEXITCODE -ne 0){throw 'Continuity regressions failed'}
+} finally {Remove-Item Env:VELIXA_TEST_DATA}
+
+if([Environment]::Is64BitProcess -and (Test-Path build/windows/Velixa.Touchpad.dll)) {
+ & 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe' /nologo /out:build/windows/TouchpadRegression.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Web.Extensions.dll /r:build/windows/Velixa.Touchpad.dll (Resolve-Path tests/TouchpadRegression.cs).Path
+ if($LASTEXITCODE -ne 0){throw 'Native touchpad regression compilation failed'}
+ & ./build/windows/TouchpadRegression.exe
+ if($LASTEXITCODE -ne 0){throw 'Native touchpad regression failed'}
+ & 'C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe' /nologo /out:build/windows/TouchpadHandoffRegression.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:build/windows/Velixa.exe /r:build/windows/Velixa.Touchpad.dll (Resolve-Path tests/TouchpadHandoffRegression.cs).Path
+ if($LASTEXITCODE -ne 0){throw 'Touchpad handoff compilation failed'}
+ & ./build/windows/TouchpadHandoffRegression.exe
+ if($LASTEXITCODE -ne 0){throw 'Native source handoff regression failed'}
+}

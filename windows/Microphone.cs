@@ -108,58 +108,102 @@ public static class WaveAudio {
 }
 
  public sealed class PeerMic { public string PeerId,PeerName,MicName; public int DevId; }
+ // Audio operations are injectable so routing can be tested without recording hardware.
+ public interface IMicrophoneAudio {
+  WaveAudio.Device[] Devices(bool input);
+  void Capture(int device,Action<byte[]> chunk,CancellationToken cancel);
+  void Play(int device,BlockingCollection<byte[]> audio,CancellationToken cancel,Action ready);
+ }
+ public sealed class SystemMicrophoneAudio:IMicrophoneAudio {
+  public WaveAudio.Device[] Devices(bool input){return WaveAudio.FullDevices(input);}
+  public void Capture(int device,Action<byte[]> chunk,CancellationToken cancel){WaveAudio.Capture(device,chunk,cancel);}
+  public void Play(int device,BlockingCollection<byte[]> audio,CancellationToken cancel,Action ready){WaveAudio.Play(device,audio,cancel,ready);}
+ }
  public sealed class MicrophoneShare:IDisposable {
-  readonly Action<string,object> send;readonly Action<Action> ui;readonly Func<string,bool> available;readonly System.Windows.Forms.Timer timer;
-  CancellationTokenSource capture,playback;BlockingCollection<byte[]> audio;string receivePeer,receiveId;DateTime lastAudio,lastDiscovery=DateTime.MinValue;bool disposed;int discovering;
-  sealed class Destination {public string Id;public volatile bool Accepted;public DateTime Started=DateTime.UtcNow;}
-  readonly ConcurrentDictionary<string,Destination> destinations=new ConcurrentDictionary<string,Destination>();
-  public bool ReceiveEnabled,AllowRemoteRequests;public int OutputDevice=-1;public Action<string> Status;public string State="Microphone is off";
+  readonly Action<string,object> send;readonly Action<Action> ui;readonly Func<string,bool> available;readonly IMicrophoneAudio backend;readonly System.Windows.Forms.Timer timer;
+  sealed class Sender {
+   public string Peer,Id;public int Device;public bool Accepted;
+   public DateTime Started=DateTime.UtcNow;public readonly CancellationTokenSource Cancel=new CancellationTokenSource();
+  }
+  sealed class Listener {
+   public string Peer,Id,Request;public int Device;public DateTime Last=DateTime.UtcNow;
+   public readonly CancellationTokenSource Cancel=new CancellationTokenSource();public readonly BlockingCollection<byte[]> Audio=new BlockingCollection<byte[]>(6);
+  }
+  readonly Dictionary<string,Sender> senders=new Dictionary<string,Sender>();Listener listener;
+  string requestedPeer,requestId;DateTime requestedAt,lastDiscovery=DateTime.MinValue;bool disposed;int discovering;
+  public bool ReceiveEnabled,AllowRemoteRequests;public int OutputDevice=-1;public string OutputName="";
+  public Action<string> Status;public string State="Choose a microphone";
   public Func<string[]> Targets=()=>new string[0],DiscoveryTargets=()=>new string[0];
   public readonly ConcurrentDictionary<string,List<PeerMic>> RemoteMics=new ConcurrentDictionary<string,List<PeerMic>>();
-  public Action MicsChanged;public bool Sending{get{return capture!=null&&!capture.IsCancellationRequested;}}public bool Receiving{get{return playback!=null&&!playback.IsCancellationRequested;}}
-  public MicrophoneShare(Action<string,object> transport,Action<Action> dispatch,Func<string,bool> reachable){send=transport;ui=dispatch;available=reachable;timer=new System.Windows.Forms.Timer{Interval=1000};timer.Tick+=(s,e)=>Tick();timer.Start();}
+  public Action MicsChanged;
+  public bool Sending{get{return senders.Count>0;}}
+  public bool Receiving{get{return listener!=null&&!listener.Cancel.IsCancellationRequested;}}
+  public bool Pending{get{return requestId!=null;}}
+  public MicrophoneShare(Action<string,object> transport,Action<Action> dispatch,Func<string,bool> reachable,IMicrophoneAudio audioBackend=null){send=transport;ui=dispatch;available=reachable;backend=audioBackend??new SystemMicrophoneAudio();timer=new System.Windows.Forms.Timer{Interval=1000};timer.Tick+=(s,e)=>Tick();timer.Start();}
+  void Emit(string peer,object message){if(!disposed)send(peer,message);}
+  void Update(string state){if(disposed)return;State=state;if(Status!=null)Status(state);}
+  public static bool IsCable(WaveAudio.Device d){return d.Name.IndexOf("CABLE Input",StringComparison.OrdinalIgnoreCase)>=0;}
+  public int ResolveOutput(){var outputs=backend.Devices(false);WaveAudio.Device selected=null;if(OutputName!="")selected=outputs.FirstOrDefault(d=>d.Name==OutputName);else if(OutputDevice>=0)selected=outputs.FirstOrDefault(d=>d.Id==OutputDevice);else selected=outputs.FirstOrDefault(IsCable);return selected==null?-1:selected.Id;}
   void Tick(){
-   foreach(var pair in destinations.ToArray())if(!available(pair.Key)||(!pair.Value.Accepted&&(DateTime.UtcNow-pair.Value.Started).TotalSeconds>10)){Destination removed;destinations.TryRemove(pair.Key,out removed);Emit(pair.Key,new{kind="mic-stop",id=pair.Value.Id});}
-   if(Sending&&destinations.IsEmpty)StopSending();
-   if(Receiving&&(!ReceiveEnabled||!available(receivePeer)||(DateTime.UtcNow-lastAudio).TotalSeconds>5))StopReceiving();
-   foreach(var key in RemoteMics.Keys)if(!available(key)){List<PeerMic> unused;RemoteMics.TryRemove(key,out unused);}
-   if((DateTime.UtcNow-lastDiscovery).TotalSeconds<5)return;lastDiscovery=DateTime.UtcNow;
-   var peers=DiscoveryTargets();if(peers.Length==0)return;
-   foreach(var peer in peers)Emit(peer,new{kind="mic-list-request",id=Guid.NewGuid().ToString("N")});
-   BroadcastTo(peers);
+   foreach(var s in senders.Values.ToArray())if(!available(s.Peer)||(!s.Accepted&&(DateTime.UtcNow-s.Started).TotalSeconds>10))StopSender(s);
+   if(listener!=null&&listener.Peer!=""&&(!available(listener.Peer)||(DateTime.UtcNow-listener.Last).TotalSeconds>5)){StopReceiving();Update("Microphone disconnected — choose a source to reconnect");}
+   if(Pending&&(DateTime.UtcNow-requestedAt).TotalSeconds>10){StopReceiving();Update("Microphone did not respond. Check that Velixa is running on the source.");}
+   bool changed=false;foreach(var key in RemoteMics.Keys)if(!available(key)){List<PeerMic> unused;changed|=RemoteMics.TryRemove(key,out unused);}if(changed&&MicsChanged!=null)MicsChanged();
+   if((DateTime.UtcNow-lastDiscovery).TotalSeconds<5||Interlocked.Exchange(ref discovering,1)!=0)return;lastDiscovery=DateTime.UtcNow;
+   var peers=DiscoveryTargets();foreach(var peer in peers)Emit(peer,new{kind="mic-list-request",id=Guid.NewGuid().ToString("N")});
+   Discover(peers);
   }
-  void Emit(string peer,object message){ui(()=>{if(!disposed)send(peer,message);});}
-  void Update(string state){ui(()=>{if(disposed)return;State=state;if(Status!=null)Status(state);});}
-  void BroadcastTo(string[] peers){if(Interlocked.Exchange(ref discovering,1)!=0)return;Task.Run(()=>{try{var mics=WaveAudio.FullDevices(true).Select(d=>new{id=d.Id,name=d.Name}).ToArray();foreach(var peer in peers)Emit(peer,new{kind="mic-list",id=Guid.NewGuid().ToString("N"),peerName=Environment.MachineName,mics=mics});}finally{Interlocked.Exchange(ref discovering,0);}});}
-  public void BroadcastMics(string peer=null){if(peer!=null)BroadcastTo(new[]{peer});}
-  public void RequestRemoteMic(string peer,int devId){StopSending();StopReceiving();if(!ReceiveEnabled){Update("Enable incoming audio in Microphone settings first");return;}if(!available(peer)){Update("That microphone device is offline");return;}Emit(peer,new{kind="mic-request",id=Guid.NewGuid().ToString("N"),devId=devId});Update("Request sent · enable sharing on the source device");}
+  void Discover(string[] peers){Task.Run(()=>{try{var mics=backend.Devices(true).Select(d=>new{id=d.Id,name=d.Name}).ToArray();ui(()=>{if(disposed)return;foreach(var peer in peers)if(available(peer))Emit(peer,new{kind="mic-list",id=Guid.NewGuid().ToString("N"),peerName=Environment.MachineName,mics=mics});});}finally{Interlocked.Exchange(ref discovering,0);}});}
+  public void BroadcastMics(string peer=null){if(peer!=null)Discover(new[]{peer});}
+  public bool RequestRemoteMic(string peer,int devId,string micName=null){
+   StopReceiving();int output=ResolveOutput();if(output<0){Update("Set up an app microphone output first (virtual audio cable)");return false;}
+   if(!available(peer)){Update("That microphone device is offline");return false;}
+   ReceiveEnabled=true;requestedPeer=peer;requestId=Guid.NewGuid().ToString("N");requestedAt=DateTime.UtcNow;
+   Update("Connecting microphone…");Emit(peer,new{kind="mic-request",id=requestId,devId=devId,micName=micName});return true;
+  }
+  public bool SelectLocal(int device){
+   StopReceiving();int output=ResolveOutput();if(output<0){Update("Set up an app microphone output first (virtual audio cable)");return false;}
+   if(!backend.Devices(true).Any(d=>d.Id==device)){Update("Microphone was unplugged. Choose another source.");return false;}
+   var run=new Listener{Peer="",Id=Guid.NewGuid().ToString("N"),Device=output};listener=run;Update("Connecting microphone…");
+   StartPlayback(run,()=>Task.Run(()=>{try{backend.Capture(device,bytes=>QueueAudio(run,bytes),run.Cancel.Token);}catch(OperationCanceledException){}catch(Exception e){ui(()=>FailListener(run,e.Message));}}));return true;
+  }
+  void QueueAudio(Listener run,byte[] bytes){if(run.Cancel.IsCancellationRequested)return;if(!run.Audio.TryAdd(bytes)){byte[] old;run.Audio.TryTake(out old);run.Audio.TryAdd(bytes);}}
+  void StartPlayback(Listener run,Action ready){Task.Run(()=>{try{backend.Play(run.Device,run.Audio,run.Cancel.Token,()=>ui(()=>{if(disposed||listener!=run||run.Cancel.IsCancellationRequested)return;Update("Microphone ready for apps");ready();}));}catch(OperationCanceledException){}catch(Exception e){ui(()=>FailListener(run,e.Message));}finally{ui(()=>{if(!disposed&&listener==run&&!run.Cancel.IsCancellationRequested)FailListener(run,"Microphone output stopped");});}});}
+  void FailListener(Listener run,string message){if(disposed||listener!=run)return;StopReceiving();Update(message);}
   public void Start(string peer,int device){StartMany(new[]{peer},device);}
-  public void StartMany(IEnumerable<string> peers,int device){
-   StopSending();var selected=peers.Where(available).Distinct().ToArray();if(selected.Length==0){Update("No compatible Windows PC is online");return;}
-   capture=new CancellationTokenSource();var token=capture.Token;var run=new Dictionary<string,Destination>();foreach(var peer in selected){var d=new Destination{Id=Guid.NewGuid().ToString("N")};destinations[peer]=d;run[peer]=d;Emit(peer,new{kind="mic-begin",id=d.Id,rate=48000,channels=1,bits=16});}
-   Update("Waiting for receiving PCs · enable incoming audio there");
-   Task.Run(()=>{try{var until=DateTime.UtcNow.AddSeconds(10);while(!run.Values.Any(d=>d.Accepted)){if(token.WaitHandle.WaitOne(20))return;if(DateTime.UtcNow>until)throw new IOException("No PC accepted audio. Enable incoming audio and select its output.");}
-    Update("Microphone sharing is on");WaveAudio.Capture(device,bytes=>{string data=Convert.ToBase64String(bytes);foreach(var pair in run){Destination active;if(pair.Value.Accepted&&destinations.TryGetValue(pair.Key,out active)&&active==pair.Value)Emit(pair.Key,new{kind="mic-data",id=pair.Value.Id,data=data});}},token);
-   }catch(OperationCanceledException){}catch(Exception e){Update(e.Message);}finally{foreach(var pair in run)Emit(pair.Key,new{kind="mic-stop",id=pair.Value.Id});ui(()=>{if(capture!=null&&capture.Token==token)capture.Cancel();});}});
+  public void StartMany(IEnumerable<string> peers,int device){foreach(var peer in peers.Where(available).Distinct())StartSender(peer,device,null);}
+  void StartSender(string peer,int device,string request){
+   Sender old;if(senders.TryGetValue(peer,out old))StopSender(old);
+   var run=new Sender{Peer=peer,Id=request??Guid.NewGuid().ToString("N"),Device=device};senders[peer]=run;
+   Emit(peer,new{kind="mic-begin",id=run.Id,request=request,rate=48000,channels=1,bits=16});Update("Microphone requested by a paired PC");
   }
+  bool Current(Sender run){Sender current;return !disposed&&senders.TryGetValue(run.Peer,out current)&&current==run&&!run.Cancel.IsCancellationRequested;}
+  void Capture(Sender run){Task.Run(()=>{try{backend.Capture(run.Device,bytes=>{if(run.Cancel.IsCancellationRequested)return;string data=Convert.ToBase64String(bytes);ui(()=>{if(Current(run))Emit(run.Peer,new{kind="mic-data",id=run.Id,data=data});});},run.Cancel.Token);}catch(OperationCanceledException){}catch(Exception e){ui(()=>{if(Current(run)){Emit(run.Peer,new{kind="mic-error",id=run.Id,message=e.Message});StopSender(run);Update(e.Message);}});}finally{ui(()=>{if(Current(run))StopSender(run);});}});}
+  void StopSender(Sender run){Sender current;if(!senders.TryGetValue(run.Peer,out current)||current!=run)return;senders.Remove(run.Peer);run.Cancel.Cancel();Emit(run.Peer,new{kind="mic-stop",id=run.Id});Update(Receiving?"Microphone ready for apps":Pending?"Connecting microphone…":Sending?"Sharing microphone with a paired PC":"Microphone off");}
   public void Handle(string from,Dictionary<string,object> m){
-   string kind=Wire.S(m,"kind"),id=Wire.S(m,"id");Guid guid;if(!available(from)||!Guid.TryParseExact(id,"N",out guid))return;
+   string kind=Wire.S(m,"kind"),id=Wire.S(m,"id");Guid guid;if(disposed||!available(from)||!Guid.TryParseExact(id,"N",out guid))return;
    if(kind=="mic-list-request"){BroadcastMics(from);return;}
-   if(kind=="mic-list"){object raw;var list=new List<PeerMic>();if(m.TryGetValue("mics",out raw)&&raw is System.Collections.IEnumerable){foreach(var item in (System.Collections.IEnumerable)raw){var d=item as Dictionary<string,object>;if(d==null||list.Count>=32)continue;string name=Wire.S(d,"name");if(name.Length>160)name=name.Substring(0,160);list.Add(new PeerMic{PeerId=from,PeerName=Wire.S(m,"peerName","PC"),DevId=Wire.I(d,"id"),MicName=name});}}RemoteMics[from]=list;if(MicsChanged!=null)ui(MicsChanged);return;}
-   if(kind=="mic-request"){if(!AllowRemoteRequests){Emit(from,new{kind="mic-error",id=id,message="Enable microphone requests on the source device"});return;}int dev=Wire.I(m,"devId",-1);if(!WaveAudio.Devices(true).Any(d=>d.Id==dev)){Emit(from,new{kind="mic-error",id=id,message="Microphone was unplugged. Refresh the list."});return;}StartMany(Targets().Concat(new[]{from}),dev);return;}
-   if(kind=="mic-error"){Update(Wire.S(m,"message","Microphone unavailable"));return;}
-   Destination target;if(kind=="mic-accept"&&destinations.TryGetValue(from,out target)&&id==target.Id){target.Accepted=Wire.S(m,"ok")=="True";return;}
-   if(kind=="mic-stop"){if(from==receivePeer&&id==receiveId)StopReceiving();if(destinations.TryGetValue(from,out target)&&id==target.Id){Destination removed;destinations.TryRemove(from,out removed);if(destinations.IsEmpty)StopSending();}return;}
-   if(kind=="mic-begin"){
-    int device=OutputDevice>=0?OutputDevice:(WaveAudio.Devices(false).Length>0?0:-1);
-    if(!ReceiveEnabled||device<0||Receiving||Sending||Wire.I(m,"rate")!=48000||Wire.I(m,"channels")!=1||Wire.I(m,"bits")!=16){Emit(from,new{kind="mic-accept",id=id,ok=false});return;}
-    receivePeer=from;receiveId=id;lastAudio=DateTime.UtcNow;audio=new BlockingCollection<byte[]>(6);playback=new CancellationTokenSource();var queue=audio;var cancel=playback.Token;
-    Task.Run(()=>{try{WaveAudio.Play(device,queue,cancel,()=>{Emit(from,new{kind="mic-accept",id=id,ok=true});Update("Receiving shared microphone");});}catch(OperationCanceledException){}catch(Exception e){Emit(from,new{kind="mic-accept",id=id,ok=false});Update(e.Message);}finally{ui(()=>{if(receiveId==id&&playback!=null)playback.Cancel();});}});return;
+   if(kind=="mic-list"){object raw;var list=new List<PeerMic>();if(m.TryGetValue("mics",out raw)&&raw is System.Collections.IEnumerable){foreach(var item in (System.Collections.IEnumerable)raw){var d=item as Dictionary<string,object>;if(d==null||list.Count>=128)continue;string name=Wire.S(d,"name");if(name.Length>160)name=name.Substring(0,160);list.Add(new PeerMic{PeerId=from,PeerName=Wire.S(m,"peerName","PC"),DevId=Wire.I(d,"id"),MicName=name});}}RemoteMics[from]=list;if(MicsChanged!=null)MicsChanged();return;}
+   if(kind=="mic-request"){
+    if(!AllowRemoteRequests){Emit(from,new{kind="mic-error",id=id,message="Microphone access is disabled on the source PC"});return;}
+    int dev=Wire.I(m,"devId",-1);if(!backend.Devices(true).Any(d=>d.Id==dev&&(Wire.S(m,"micName")==""||d.Name==Wire.S(m,"micName")))){Emit(from,new{kind="mic-error",id=id,message="Microphone was unplugged. Refresh the list."});return;}
+    StartSender(from,dev,id);return;
    }
-   if(kind=="mic-data"&&ReceiveEnabled&&Receiving&&from==receivePeer&&id==receiveId){string data=Wire.S(m,"data");if(data.Length>6000)return;try{var bytes=Convert.FromBase64String(data);if(bytes.Length==0||bytes.Length>3840||bytes.Length%2!=0)return;lastAudio=DateTime.UtcNow;if(!audio.TryAdd(bytes)){byte[] old;audio.TryTake(out old);audio.TryAdd(bytes);}}catch(FormatException){}}
+   if(kind=="mic-error"){if((from==requestedPeer&&id==requestId)||(listener!=null&&from==listener.Peer&&id==listener.Id)){StopReceiving();Update(Wire.S(m,"message","Microphone unavailable"));}return;}
+   Sender target;
+   if(kind=="mic-accept"&&senders.TryGetValue(from,out target)&&id==target.Id){if(Wire.S(m,"ok")!="True"){StopSender(target);return;}if(!target.Accepted){target.Accepted=true;Capture(target);}return;}
+   if(kind=="mic-stop"){if(listener!=null&&from==listener.Peer&&id==listener.Id){StopReceiving();Update("Source microphone stopped");}if(senders.TryGetValue(from,out target)&&id==target.Id)StopSender(target);return;}
+   if(kind=="mic-begin"){
+    // A selection on this PC authorizes exactly one source. Never play unsolicited audio.
+    string request=Wire.S(m,"request");int device=ResolveOutput();
+    if(!ReceiveEnabled||from!=requestedPeer||!Pending||(request!=""&&request!=requestId)||device<0||Receiving||Wire.I(m,"rate")!=48000||Wire.I(m,"channels")!=1||Wire.I(m,"bits")!=16){Emit(from,new{kind="mic-accept",id=id,ok=false});return;}
+    var run=new Listener{Peer=from,Id=id,Request=requestId,Device=device};listener=run;requestId=null;requestedPeer=null;
+    StartPlayback(run,()=>Emit(from,new{kind="mic-accept",id=id,ok=true}));return;
+   }
+   if(kind=="mic-data"&&listener!=null&&from==listener.Peer&&id==listener.Id){string data=Wire.S(m,"data");if(data.Length>5120)return;try{var bytes=Convert.FromBase64String(data);if(bytes.Length==0||bytes.Length>3840||bytes.Length%2!=0)return;listener.Last=DateTime.UtcNow;QueueAudio(listener,bytes);}catch(FormatException){}}
   }
-  public void StopSending(){if(capture!=null&&!capture.IsCancellationRequested)capture.Cancel();foreach(var pair in destinations.ToArray()){Destination removed;if(destinations.TryRemove(pair.Key,out removed))Emit(pair.Key,new{kind="mic-stop",id=removed.Id});}Update("Microphone is off");}
-  public void StopReceiving(){if(playback!=null&&!playback.IsCancellationRequested){playback.Cancel();if(receivePeer!=null)Emit(receivePeer,new{kind="mic-stop",id=receiveId});}Update("Microphone is off");}
+  public void StopSending(){foreach(var s in senders.Values.ToArray())StopSender(s);if(!Receiving&&!Pending)Update("Choose a microphone");}
+  public void StopReceiving(){var pendingPeer=requestedPeer;var pendingId=requestId;requestId=null;requestedPeer=null;if(pendingPeer!=null)Emit(pendingPeer,new{kind="mic-stop",id=pendingId});var run=listener;listener=null;if(run!=null){run.Cancel.Cancel();if(run.Peer!="")Emit(run.Peer,new{kind="mic-stop",id=run.Id});Update(Receiving?"Microphone ready for apps":Pending?"Connecting microphone…":Sending?"Sharing microphone with a paired PC":"Microphone off");}Update(Sending?"Sharing microphone with a paired PC":"Microphone off");}
   public void Dispose(){StopSending();StopReceiving();disposed=true;timer.Dispose();}
  }
 }

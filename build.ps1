@@ -22,6 +22,7 @@ Copy-Item deps/bc/lib/net461/BouncyCastle.Cryptography.dll build/windows/
 Copy-Item deps/qr/lib/net40/QRCoder.dll build/windows/
 $sources = Get-ChildItem windows -Filter *.cs | Select-Object -ExpandProperty FullName
 Run (Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe') (@('/nologo','/target:winexe','/optimize+','/out:build/windows/Velixa.exe','/r:System.Windows.Forms.dll','/r:System.Drawing.dll','/r:System.Web.Extensions.dll','/r:System.Security.dll','/r:System.Core.dll','/r:build/windows/BouncyCastle.Cryptography.dll','/r:build/windows/QRCoder.dll','/win32manifest:windows/app.manifest','/win32icon:build/windows/velixa.ico') + $sources)
+& (Join-Path $project 'tests/build-touchpad.ps1')
 Copy-Item LICENSE build/windows/LICENSE.txt
 Copy-Item windows/Velixa.exe.config build/windows/Velixa.exe.config
 Copy-Item assets/THIRD-PARTY-NOTICES.txt build/windows/THIRD-PARTY-NOTICES.txt
@@ -58,6 +59,6 @@ try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--
 Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose',"dist/Velixa-$releaseVersion-Android.apk")
 }
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-$releaseVersion-Windows-Portable.zip -Force
+Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/Velixa.Touchpad.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-$releaseVersion-Windows-Portable.zip -Force
 $artifacts=@("dist/Velixa-$releaseVersion-Windows-Setup.exe","dist/Velixa-$releaseVersion-Windows-Portable.zip"); if (!$WindowsOnly) {$artifacts+="dist/Velixa-$releaseVersion-Android.apk"}
 Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-$releaseVersion.txt

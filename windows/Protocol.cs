@@ -16,6 +16,10 @@ using System.Web.Script.Serialization;
 
 namespace Velixa {
 public static class Wire {
+ [System.Runtime.InteropServices.DllImport("kernel32.dll")]static extern IntPtr GetModuleHandle(string name);
+ [System.Runtime.InteropServices.DllImport("kernel32.dll")]static extern IntPtr GetProcAddress(IntPtr module,string name);
+ public static bool TouchpadAvailable{get{try{return File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Velixa.Touchpad.dll"))&&GetProcAddress(GetModuleHandle("user32.dll"),"CreateSyntheticPointerDevice2")!=IntPtr.Zero;}catch{return false;}}}
+
  #if TESTING
  public const int Port=47128, DiscoveryPort=47129;
 #else
@@ -60,7 +64,7 @@ var p=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalAppl
  }
 }
 public class Peer : IDisposable {
- public string Name,Kind,Id;public double X,Y;public double Scale=1;public bool Sharing;public bool Online=true;public Action<object> SendAction;public int Width=1920,Height=1080;public DateTime Seen=DateTime.UtcNow;
+ public string Name,Kind,Id;public double X,Y;public double Scale=1;public bool Sharing,Touchpad;public bool Online=true;public Action<object> SendAction;public int Width=1920,Height=1080;public DateTime Seen=DateTime.UtcNow;
  public TcpClient Tcp;public SslStream Ssl;public StreamReader Reader;public StreamWriter Writer;
  public bool Closed;public Action<Peer> OnClosed;
  BlockingCollection<string> queue=new BlockingCollection<string>(512);
@@ -74,7 +78,7 @@ public class Network : IDisposable {
  public static readonly string LocalId=Identity();public static volatile bool LocalAwake=true;
  static string Identity(){string s=Wire.LoadSecret("device-id.bin","");if(s==""){s=Guid.NewGuid().ToString();Wire.SaveSecret("device-id.bin",s);}return s;}
  public string Code="",QrToken="",HostId="";public DateTime PairUntil=DateTime.MinValue;int attempts;readonly object gate=new object();
- public bool Running,IsHost;public List<Peer> Peers=new List<Peer>();public Action<Peer> Joined,Left;public Action<Peer,Dictionary<string,object>> Packet;public Action<string> Status;public Action<Dictionary<string,object>> Received;public Func<string,bool> ReconnectApproval;
+ public volatile bool Connecting;public const int MaximumConnectAttempts=3;public bool Running,IsHost;public List<Peer> Peers=new List<Peer>();public Action<Peer> Joined,Left;public Action<Peer,Dictionary<string,object>> Packet;public Action<string> Status;public Action<Dictionary<string,object>> Received;public Func<string,bool> ReconnectApproval;
  TcpListener listener;UdpClient udp;X509Certificate2 cert;Peer uplink;CancellationTokenSource stop=new CancellationTokenSource();SemaphoreSlim slots=new SemaphoreSlim(12);Dictionary<string,string> trusted=new Dictionary<string,string>();
  public Network(){try{trusted=new JavaScriptSerializer().Deserialize<Dictionary<string,string>>(Wire.LoadSecret("trusted-v2.bin","{}"));}catch{}}
  public string Fingerprint {get{return Wire.Hash(cert??Wire.Certificate());}}
@@ -90,7 +94,7 @@ public class Network : IDisposable {
  static Org.BouncyCastle.Math.BigInteger Big(Dictionary<string,object> m,string k){string s=Wire.S(m,k);if(s.Length<1||s.Length>1024)throw new IOException("Invalid proof");return new Org.BouncyCastle.Math.BigInteger(s,16);}
  void Accept(TcpClient tcp){Peer p=null;try{
   tcp.ReceiveTimeout=8000;tcp.SendTimeout=8000;var ssl=new SslStream(tcp.GetStream(),false);ssl.AuthenticateAsServer(cert,false,SslProtocols.Tls12,false);p=new Peer(tcp,ssl);
-  string nonce=Wire.RandomHex(32);p.Writer.WriteLine(Wire.Json(new{t="hello",v=2,nonce=nonce,id=LocalId}));var a=Wire.Parse(Wire.ReadLine(p.Reader));string mode=Wire.S(a,"mode");p.Id=Wire.S(a,"id");p.Name=Wire.S(a,"name","Device");p.Kind=Wire.S(a,"kind");if(p.Id.Length<8||p.Id.Length>64||p.Id==LocalId||p.Name.Length>60||(p.Kind!="Windows"&&p.Kind!="Android")||Wire.S(a,"cn").Length!=64)throw new IOException();
+  string nonce=Wire.RandomHex(32);p.Writer.WriteLine(Wire.Json(new{t="hello",v=2,nonce=nonce,id=LocalId}));var a=Wire.Parse(Wire.ReadLine(p.Reader));string mode=Wire.S(a,"mode");p.Id=Wire.S(a,"id");p.Name=Wire.S(a,"name","Device");p.Kind=Wire.S(a,"kind");p.Touchpad=Wire.S(a,"touchpad")=="True";if(p.Id.Length<8||p.Id.Length>64||p.Id==LocalId||p.Name.Length>60||(p.Kind!="Windows"&&p.Kind!="Android")||Wire.S(a,"cn").Length!=64)throw new IOException();
   string basis="Velixa-v2|"+LocalId+"|"+p.Id+"|"+Wire.Hash(cert)+"|"+nonce+"|"+Wire.S(a,"cn"),token="",pin="";
   if(mode=="resume"){lock(gate)trusted.TryGetValue(p.Id,out token);if(String.IsNullOrEmpty(token)||!Wire.Equal(Wire.S(a,"proof"),Wire.Mac(token,basis+"|client")))throw new IOException();}
   else if(mode=="qr"){lock(gate){if(DateTime.UtcNow>PairUntil||QrToken==""||!Wire.Equal(Wire.S(a,"proof"),Wire.Mac(QrToken,basis+"|client")))throw new IOException();QrToken="";PairUntil=DateTime.MinValue;}token=Wire.RandomHex(32);}
@@ -112,20 +116,21 @@ public class Network : IDisposable {
  public void Forget(string id){if(!IsHost||id==LocalId)return;lock(gate){trusted.Remove(id);Wire.SaveSecret("trusted-v2.bin",Wire.Json(trusted));}foreach(var peer in Snapshot().Where(p=>p.Id==id))peer.Dispose();}
  public Peer[] Snapshot(){lock(Peers)return Peers.ToArray();}
  public void Send(object m){if(uplink!=null)uplink.Send(m);}
- public void Connect(string host,string pin,int width,int height){Running=true;Task.Run(async()=>{bool paired=false,declined=false,allowed=false;string token=pin.Length==4?"":Wire.LoadSecret("remote-token-v2.bin",""),fp=pin.Length==4?"":Wire.LoadSecret("remote-fp-v2.bin","");
+ public void Connect(string host,string pin,int width,int height){Running=true;Connecting=true;Task.Run(async()=>{int failures=0;bool paired=false,declined=false,allowed=false;string token=pin.Length==4?"":Wire.LoadSecret("remote-token-v2.bin",""),fp=pin.Length==4?"":Wire.LoadSecret("remote-fp-v2.bin","");
   while(!stop.IsCancellationRequested){TcpClient tcp=null;bool reached=false;try{
-   if(Status!=null)Status("Looking for your desk…");if(token!=""){string saved=Wire.LoadSecret("remote-id-v2.bin","");foreach(var d in Discover())if(d[2]==saved){host=d[0];break;}}
+   if(Status!=null)Status("Connecting to desk · attempt "+(failures+1)+" of "+MaximumConnectAttempts);if(token!=""){string saved=Wire.LoadSecret("remote-id-v2.bin","");foreach(var d in Discover())if(d[2]==saved){host=d[0];break;}}
    tcp=new TcpClient();var connect=tcp.ConnectAsync(host,Wire.Port);if(await Task.WhenAny(connect,Task.Delay(3000))!=connect)throw new IOException("Desk is offline");await connect;
    tcp.ReceiveTimeout=8000;tcp.SendTimeout=8000;var ssl=new SslStream(tcp.GetStream(),false,(a,b,c,d)=>fp==""||Wire.Equal(fp,Wire.Hash(b)));ssl.AuthenticateAsClient("Velixa",null,SslProtocols.Tls12,false);reached=true;
-   if(token!=""&&!paired&&!allowed){tcp.Close();if(declined){await Task.Delay(3000);continue;}if(ReconnectApproval!=null&&!ReconnectApproval(host)){declined=true;continue;}allowed=true;continue;}
+   if(token!=""&&!paired&&!allowed){tcp.Close();if(ReconnectApproval!=null&&!ReconnectApproval(host)){declined=true;break;}allowed=true;continue;}
    var p=new Peer(tcp,ssl);uplink=p;var hello=Wire.Parse(Wire.ReadLine(p.Reader));if(Wire.I(hello,"v")!=2)throw new IOException("Update Velixa on both PCs");HostId=Wire.S(hello,"id");string hash=Wire.Hash(ssl.RemoteCertificate),cn=Wire.RandomHex(32),basis="Velixa-v2|"+HostId+"|"+LocalId+"|"+hash+"|"+Wire.S(hello,"nonce")+"|"+cn;
-   p.Writer.WriteLine(Wire.Json(new{mode=token==""?"srp":"resume",id=LocalId,name=Environment.MachineName,kind="Windows",sharing=1,cn=cn,w=width,h=height,proof=token==""?"":Wire.Mac(token,basis+"|client")}));
+   p.Writer.WriteLine(Wire.Json(new{mode=token==""?"srp":"resume",id=LocalId,name=Environment.MachineName,kind="Windows",sharing=1,touchpad=Wire.TouchpadAvailable,cn=cn,w=width,h=height,proof=token==""?"":Wire.Mac(token,basis+"|client")}));
    if(token==""){var challenge=Wire.Parse(Wire.ReadLine(p.Reader));var group=Org.BouncyCastle.Tls.Crypto.Srp6StandardGroups.rfc5054_2048;var srp=new Org.BouncyCastle.Crypto.Agreement.Srp.Srp6Client();srp.Init(group.N,group.G,new Org.BouncyCastle.Crypto.Digests.Sha256Digest(),new Org.BouncyCastle.Security.SecureRandom());var a=srp.GenerateClientCredentials(Convert.FromBase64String(Wire.S(challenge,"salt")),Bytes(basis),Bytes(pin));srp.CalculateSecret(Big(challenge,"b"));p.Writer.WriteLine(Wire.Json(new{a=a.ToString(16),m=srp.CalculateClientEvidenceMessage().ToString(16)}));var proof=Wire.Parse(Wire.ReadLine(p.Reader));if(!srp.VerifyServerEvidenceMessage(Big(proof,"m")))throw new IOException("Pairing code does not match");p.Writer.WriteLine(Wire.Json(new{proof=Wire.Mac(srp.CalculateSessionKey().ToString(16),basis+"|confirm")}));}
-   var ready=Wire.Parse(Wire.ReadLine(p.Reader));if(token=="")token=Wire.S(ready,"token");if(token.Length!=64||!Wire.Equal(Wire.S(ready,"proof"),Wire.Mac(token,basis+"|server")))throw new IOException("Pairing failed");fp=hash;Wire.SaveSecret("remote-token-v2.bin",token);Wire.SaveSecret("remote-fp-v2.bin",fp);Wire.SaveSecret("remote-id-v2.bin",HostId);Wire.SaveSecret("host.bin",host);paired=true;allowed=false;p.StartWriter();if(Status!=null)Status("Connected to your desk");while(!p.Closed&&!stop.IsCancellationRequested){var m=Wire.Parse(Wire.ReadLine(p.Reader));if(Wire.S(m,"t")=="ping"){p.Send(new{t="pong"});p.Send(new{t="awake",awake=LocalAwake});}else if(Received!=null)Received(m);}
-  }catch(Exception){if(!reached)declined=false;if(Status!=null)Status(token==""?"Could not pair. Check the code and try again.":"Desk is offline · waiting nearby");if(token=="")break;}finally{paired=false;if(uplink!=null)uplink.Dispose();if(tcp!=null)tcp.Close();if(Received!=null)Received(Wire.Parse("{\"t\":\"offline\"}"));}await Task.Delay(3000);
+   var ready=Wire.Parse(Wire.ReadLine(p.Reader));if(token=="")token=Wire.S(ready,"token");if(token.Length!=64||!Wire.Equal(Wire.S(ready,"proof"),Wire.Mac(token,basis+"|server")))throw new IOException("Pairing failed");fp=hash;Wire.SaveSecret("remote-token-v2.bin",token);Wire.SaveSecret("remote-fp-v2.bin",fp);Wire.SaveSecret("remote-id-v2.bin",HostId);Wire.SaveSecret("host.bin",host);paired=true;allowed=false;failures=0;Connecting=false;p.StartWriter();if(Status!=null)Status("Connected to your desk");while(!p.Closed&&!stop.IsCancellationRequested){var m=Wire.Parse(Wire.ReadLine(p.Reader));if(Wire.S(m,"t")=="ping"){p.Send(new{t="pong"});p.Send(new{t="awake",awake=LocalAwake});}else if(Received!=null)Received(m);}
+  }catch(Exception){if(!reached)declined=false;if(Status!=null)Status(token==""?"Could not pair. Check the code and try again.":"Desk is offline · waiting nearby");if(token==""||++failures>=MaximumConnectAttempts)break;}finally{paired=false;if(uplink!=null)uplink.Dispose();if(tcp!=null)tcp.Close();if(Received!=null)Received(Wire.Parse("{\"t\":\"offline\"}"));}if(stop.IsCancellationRequested)break;Connecting=true;await Task.Delay(3000);
   }
+  Connecting=false;if(!stop.IsCancellationRequested&&Status!=null)Status(token==""?"Could not pair. Check the code and try again.":declined?"Connection declined · choose Retry to reconnect":"Desk offline · turn on the other PC, then choose Retry");if(!stop.IsCancellationRequested&&Received!=null)Received(Wire.Parse("{\"t\":\"offline\"}"));
  });}
  public static List<string[]> Discover(){var found=new List<string[]>();var seen=new HashSet<string>();using(var u=new UdpClient()){u.EnableBroadcast=true;u.Client.ReceiveTimeout=300;byte[] b=Encoding.UTF8.GetBytes("VELIXA_DISCOVER_2");u.Send(b,b.Length,new IPEndPoint(IPAddress.Broadcast,Wire.DiscoveryPort));DateTime end=DateTime.UtcNow.AddSeconds(1);while(DateTime.UtcNow<end)try{var ep=new IPEndPoint(IPAddress.Any,0);var s=Encoding.UTF8.GetString(u.Receive(ref ep)).Split('|');if(s.Length==3&&s[0]=="VELIXA_2"&&seen.Add(s[2]))found.Add(new[]{ep.Address.ToString(),s[1],s[2]});}catch(SocketException){}}return found;}
- public void Dispose(){stop.Cancel();Running=false;try{if(listener!=null)listener.Stop();if(udp!=null)udp.Close();}catch{}foreach(var p in Snapshot())p.Dispose();if(uplink!=null)uplink.Dispose();}
+ public void Dispose(){stop.Cancel();Running=false;Connecting=false;try{if(listener!=null)listener.Stop();if(udp!=null)udp.Close();}catch{}foreach(var p in Snapshot())p.Dispose();if(uplink!=null)uplink.Dispose();}
 }
 }
