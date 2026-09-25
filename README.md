@@ -4,8 +4,8 @@
 
 Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphones across a local desk. Move the pointer across the edge of one screen to control another Windows or Android device, with no account and no cloud relay.
 
-[![Latest Windows release](https://img.shields.io/badge/Windows-0.5.5_preview-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview)
-[![Latest Android release](https://img.shields.io/badge/Android-0.5.5_preview-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview)
+[![Latest Windows release](https://img.shields.io/badge/Windows-1.0.0-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.0)
+[![Latest Android release](https://img.shields.io/badge/Android-1.0.0-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F4B942.svg)](LICENSE)
 
 ![Velixa desk with aligned controls, gold local screen and purple remote screens](docs/desk.png)
@@ -30,20 +30,20 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 | Receive microphone audio | Yes | No |
 
 > [!NOTE]
-> Windows and Android are aligned at 0.5.5. This update adds receiver-selected microphones, native Windows touchpad gesture forwarding, corrected edge feedback, and simpler controls. Existing pairings are retained. Offline reconnection stops after three attempts; use Retry connection when the other PC is back. Pause input, microphone selection, and Disconnect stay available across desk screens. Offline device removal is saved locally and synchronized when the coordinator returns.
+> Velixa 1.0.0 is the first public release, with matching Windows and Android versions. It includes receiver-selected microphones, native Windows touchpad gesture forwarding, corrected edge feedback, and simpler controls. Existing pairings are retained. Offline reconnection stops after three attempts; use Retry connection when the other PC is back. Pause input, microphone selection, and Disconnect stay available across desk screens. Offline device removal is saved locally and synchronized when the coordinator returns.
 
 ## Download
 
 | Download | Use |
 | --- | --- |
-| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Windows-Setup.exe) | Install Velixa on a Windows PC. |
-| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
-| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/Velixa-0.5.5-Android.apk) | Install or update Velixa on an Android device. |
-| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v0.5.5-preview/SHA256SUMS-0.5.5.txt) | Verify the downloaded files. |
+| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.0/Velixa-1.0.0-Windows-Setup.exe) | Install Velixa on a Windows PC. |
+| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.0/Velixa-1.0.0-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
+| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.0/Velixa-1.0.0-Android.apk) | Install or update Velixa on an Android device. |
+| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.0/SHA256SUMS-1.0.0.txt) | Verify the downloaded files. |
 
 Windows requires .NET Framework 4.8. The installer is unsigned, so Windows may display an unknown-publisher warning. Android requires Android 8 or later; the APK retains the project's existing signing identity for upgrades.
 
-See the [0.5.5 Preview release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v0.5.5-preview). This is a preview, with hardware-specific acceptance still required.
+See the [1.0.0 release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.0). This is the first public release. Hardware-specific validation limits are documented in TESTING.md.
 
 ## Quick start
 
@@ -163,7 +163,7 @@ On Android, camera permission is used only to scan pairing QR codes. Microphone 
 - The coordinator must remain awake. Automatic coordinator migration is not yet implemented.
 - Hardware and driver behavior varies. Automated validation cannot guarantee compatibility with every PC, phone, microphone, or calling app.
 
-Version 0.5.5 includes Windows continuity and native gesture regressions alongside the integration, sharing, and desktop suites. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
+Version 1.0.0 includes Windows continuity and native gesture regressions alongside the integration, sharing, and desktop suites. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
 
 ## Build from source
 

@@ -1,6 +1,8 @@
 # Release validation
 
-## Windows 0.5.5 preview
+1.0.0 packages the previously validated 0.5.5 functionality with matching release versions and Android versionCode 9. Functional results below were obtained on that identical implementation; package/version validation is repeated for 1.0.0.
+
+## Windows 1.0.0
 
 The Windows update passes the existing integration, sharing, window, encrypted transfer, and desktop suites described below, plus:
 
@@ -11,13 +13,13 @@ The Windows update passes the existing integration, sharing, window, encrypted t
 
 Run `build.ps1 -WindowsOnly`, then `tests/run-tests.ps1`. The native gesture test temporarily focuses a small test surface and restores the previous foreground window and cursor. The bridge is compiled separately from Windows WinMetadata so older runtime Windows versions can retain mouse/keyboard support without loading unsupported WinRT types. Building the bridge requires an updated Windows 11 build with the newer API metadata.
 
-Release outputs: `dist/Velixa-0.5.5-Windows-Setup.exe`, `dist/Velixa-0.5.5-Windows-Portable.zip`, and `dist/Velixa-0.5.5-Android.apk`; hashes are in `dist/SHA256SUMS-0.5.5.txt`. Windows, installer, and Android version agreement is enforced by the build.
+Release outputs: `dist/Velixa-1.0.0-Windows-Setup.exe`, `dist/Velixa-1.0.0-Windows-Portable.zip`, and `dist/Velixa-1.0.0-Android.apk`; hashes are in `dist/SHA256SUMS-1.0.0.txt`. Windows, installer, and Android version agreement is enforced by the build.
 
 Physical acceptance still required on both updated PCs: actual touchpad scroll/pinch/swipe/tap behavior using different receiving-PC gesture settings, source focus restoration, fast edge handoffs, USB/Bluetooth hotplug, microphone audio through an installed virtual cable into the intended calling app, and mixed-DPI layouts. No virtual audio cable is installed on the test PC, so app-level microphone routing was not physically verified.
 
 Implementation references: [Microsoft Precision Touchpad guide](https://learn.microsoft.com/en-us/windows/win32/input-precisiontouchpad/precision-touchpad-guide), [synthetic pointer device API](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createsyntheticpointerdevice2).
 
-## Additional Windows 0.5.5 validation
+## Additional Windows 1.0.0 validation
 
 - 229 integration checks for authentication, input routing, source switching, saved desks, sleep, sizing and shared edge geometry.
 - 9 core cryptography, framing and storage checks.
@@ -29,7 +31,7 @@ Implementation references: [Microsoft Precision Touchpad guide](https://learn.mi
 
 Run `build.ps1 -WindowsOnly`, then `tests/run-tests.ps1`. Test harnesses are compiled with TESTING and require a unique VELIXA_TEST_DATA directory. They use TCP 47128 and UDP 47129; missing or production storage paths are rejected. Preview and self-test modes use temporary settings instead of the installed desk.
 
-## Android 0.5.5
+## Android 1.0.0
 
 22 emulator checks cover pairing, layout, reconnection, sleep/wake, microphone enumeration visible service lifecycle, correlated microphone request replacement, stale/current stop handling, and silent edge resets. Additional checks cover shared device numbering and repeated scrolling in both directions, sampling scroll position to detect reversals. The Windows coordinator verified receipt of 151 Android PCM audio packets. Twelve JVM regression checks cover built-in route deduplication, non-microphone exclusion, and distinct external microphones; run tests/android-routes.ps1 with -AndroidSdk. The release APK is checked with apksigner and retains the existing signing identity.
 
@@ -41,4 +43,4 @@ Android theme instrumentation (`tests/android-theme.ps1`) renders setup, pairing
 
 Automated checks do not verify every physical laptop, phone, driver or microphone. Mixed-DPI multi-monitor handoff, OEM background restrictions, external/Bluetooth microphone routing, and shared audio selected inside third-party calling apps require real-device acceptance. A separately installed virtual audio cable is required for Windows apps to see incoming audio as a microphone. Android does not receive Windows microphone audio for phone calls.
 
-This is a preview release, not a guarantee of zero defects. The Windows installer is unsigned.
+Hardware-specific acceptance remains as listed above. The Windows installer is unsigned.
