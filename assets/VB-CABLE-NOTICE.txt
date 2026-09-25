@@ -1,0 +1,20 @@
+VB-CABLE by VB-Audio Software
+
+Official website: https://vb-audio.com/Cable/
+VB-CABLE is donationware. All participations are welcome.
+Support or purchase a license: https://shop.vb-audio.com/
+Licensing: https://vb-audio.com/Services/licensing.htm
+
+The original, unmodified standard VB-CABLE package is included with Velixa.
+VB-CABLE remains a separate third-party product under its own terms.
+Professional and organizational use is subject to VB-Audio licensing terms.
+The vendor's readme.txt and original ZIP are included in this folder.
+
+Optional installation: run VBCABLE_Setup_x64.exe as administrator, choose
+Install Driver, then restart Windows as instructed by VB-Audio.
+In Velixa, leave microphone output on Automatic and select a source.
+In Teams, Recorder or other apps, select CABLE Output (VB-Audio Virtual Cable).
+This supplies one shared input, not a separate endpoint for every remote mic.
+
+Velixa does not automatically remove VB-CABLE when uninstalled because other
+applications may use it. Use the vendor setup program to remove it separately.

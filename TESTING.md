@@ -1,3 +1,7 @@
+# 1.0.1 packaging validation
+
+Includes the hash-pinned original VB-CABLE Pack45 archive and extracted vendor files. Build verifies the x64 installer and Windows 10/11 driver catalog signatures. Optional setup skips systems with the VBAudioVACMME service and preserves the independently installed driver during Velixa uninstall. Fresh-machine setup still needs acceptance; this PC already has VB-CABLE installed. A synthetic audio loopback through the installed cable captured 192000 samples with nonzero signal.
+
 # Release validation
 
 1.0.0 packages the previously validated 0.5.5 functionality with matching release versions and Android versionCode 9. Functional results below were obtained on that identical implementation; package/version validation is repeated for 1.0.0.

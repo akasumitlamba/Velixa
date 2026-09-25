@@ -18,6 +18,7 @@ if (!$WindowsOnly) {
 function Run([string]$exe, [string[]]$arguments) { & $exe @arguments; if ($LASTEXITCODE -ne 0) { throw "$exe failed: $LASTEXITCODE" } }
 New-Item -ItemType Directory -Force build/windows,build/android/classes,dist,android/res/mipmap-mdpi,android/res/mipmap-anydpi-v26,android/res/mipmap-anydpi-v33 | Out-Null
 & (Join-Path $project 'assets/build-icons.ps1')
+& (Join-Path $project 'assets/prepare-vbcable.ps1')
 Copy-Item deps/bc/lib/net461/BouncyCastle.Cryptography.dll build/windows/
 Copy-Item deps/qr/lib/net40/QRCoder.dll build/windows/
 $sources = Get-ChildItem windows -Filter *.cs | Select-Object -ExpandProperty FullName
@@ -59,6 +60,6 @@ try { Run (Join-Path $androidTools 'apksigner.bat') @('sign','--ks',$keyPath,'--
 Run (Join-Path $androidTools 'apksigner.bat') @('verify','--verbose',"dist/Velixa-$releaseVersion-Android.apk")
 }
 Run 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe' @('windows/installer.iss')
-Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/Velixa.Touchpad.dll,build/windows/THIRD-PARTY-NOTICES.txt -DestinationPath dist/Velixa-$releaseVersion-Windows-Portable.zip -Force
+Compress-Archive -Path build/windows/LICENSE.txt,build/windows/Velixa.exe,build/windows/Velixa.exe.config,build/windows/velixa.ico,build/windows/velixa-logo.png,build/windows/BouncyCastle.Cryptography.dll,build/windows/QRCoder.dll,build/windows/Velixa.Touchpad.dll,build/windows/THIRD-PARTY-NOTICES.txt,build/windows/VB-CABLE -DestinationPath dist/Velixa-$releaseVersion-Windows-Portable.zip -Force
 $artifacts=@("dist/Velixa-$releaseVersion-Windows-Setup.exe","dist/Velixa-$releaseVersion-Windows-Portable.zip"); if (!$WindowsOnly) {$artifacts+="dist/Velixa-$releaseVersion-Android.apk"}
 Get-Item $artifacts | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content dist/SHA256SUMS-$releaseVersion.txt
