@@ -1,0 +1,43 @@
+Velixa 1.1.0 local review build — 2026-09-29
+
+Build: Windows installer + portable ZIP + Android APK completed successfully.
+Windows installer Authenticode: NotSigned.
+Android APK: signature scheme v2 and v3 verification passed.
+Installed application was not replaced; no release was published.
+
+Latest broad run: build/revision-verification.log
+  231 protocol/integration checks passed
+  9 core self-checks passed
+  30 close/minimize/restore cycles passed
+  26 sharing checks passed
+  8 MB authenticated TLS file transfer passed, 1027 frames, hash/heartbeat verified
+  8 injected title-bar clicks passed
+  4 dialogs rendered
+  64 desktop UI checks passed
+  8 file-drop checks passed
+  41 continuity checks passed
+  13 desk-revision checks passed
+  5 delayed-host/socket-recovery assertions passed
+  3 Android Java / Windows SRP handshakes passed
+Additional: 12 Android microphone-route checks passed.
+
+Native touchpad qualification:
+  42 synthetic touchpad checks passed after resetting the test surface between
+  independent gestures. Physical trackpad acceptance remains open.
+
+No physical Android device was attached. Overnight reconnect, OEM background restrictions,
+Bluetooth speakers, virtual endpoint visibility/default recovery, and real multi-PC audio
+mixing were not physically verified. The audio-loopback runner verified external audio
+capture while the endpoint was muted, exclusion of Velixa playback, exact mute restoration,
+and guard recovery after abrupt exit. Automated builds disable Windows endpoint mutations.
+
+Simultaneous remote microphone and exclusive remote speaker routing is implemented with
+Windows process-loopback capture plus VB-CABLE for the microphone route. The destination
+acknowledgement test prevents local muting until physical playback is ready. See
+docs/desk-reliability-1.1.0.md for Windows-version and physical-device limits.
+
+Artifact SHA-256:
+3e08cf64dc66becbd29790dda76f691ce67bd38c259546f02107b1722e159de6  Velixa-1.1.0-Windows-Setup.exe
+cff6c02a2e26bbeb183e8c2c57f1efae507bd9e46f90a27f25a22f52ee804c61  Velixa-1.1.0-Windows-Portable.zip
+c23096339ed4c22dfb11d10015e9cea68957325d5f51f441c9fc0a812001098b  Velixa-1.1.0-Android.apk
+

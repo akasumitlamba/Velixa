@@ -40,7 +40,7 @@ public final class MicrophoneService extends Service {
   startForeground(27,n);return START_NOT_STICKY;
  }
  synchronized void begin(String requester,String requestId,int deviceId,String expectedName){
-  AudioDeviceInfo selected=null;for(AudioDeviceInfo d:devices(this))if(d.getId()==deviceId&&(expectedName.isEmpty()||expectedName.equals(label(d))))selected=d;
+  AudioDeviceInfo selected=null;if(deviceId==-2&&devices(this).length>0)deviceId=devices(this)[0].getId();for(AudioDeviceInfo d:devices(this))if(d.getId()==deviceId&&(expectedName.isEmpty()||expectedName.equals(label(d))))selected=d;
   if(selected==null){error(requester,requestId,"Microphone list changed. Close and reopen the microphone menu.");return;}
   Stream previous=streams.get(requester);if(previous!=null)stop(previous);
   final Stream stream=new Stream(requester,requestId,selected);streams.put(requester,stream);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -131,7 +131,7 @@ public static class WaveAudio {
   }
   readonly Dictionary<string,Sender> senders=new Dictionary<string,Sender>();Listener listener;
   string requestedPeer,requestId;DateTime requestedAt,lastDiscovery=DateTime.MinValue;bool disposed;int discovering;
-  public bool ReceiveEnabled,AllowRemoteRequests;public int OutputDevice=-1;public string OutputName="";
+  public int PreferredInput=-1;public string PreferredInputName="";public bool ReceiveEnabled,AllowRemoteRequests;public int OutputDevice=-1;public string OutputName="";
   public Action<string> Status;public string State="Choose a microphone";
   public Func<string[]> Targets=()=>new string[0],DiscoveryTargets=()=>new string[0];
   public readonly ConcurrentDictionary<string,List<PeerMic>> RemoteMics=new ConcurrentDictionary<string,List<PeerMic>>();
@@ -186,7 +186,7 @@ public static class WaveAudio {
    if(kind=="mic-list"){object raw;var list=new List<PeerMic>();if(m.TryGetValue("mics",out raw)&&raw is System.Collections.IEnumerable){foreach(var item in (System.Collections.IEnumerable)raw){var d=item as Dictionary<string,object>;if(d==null||list.Count>=128)continue;string name=Wire.S(d,"name");if(name.Length>160)name=name.Substring(0,160);list.Add(new PeerMic{PeerId=from,PeerName=Wire.S(m,"peerName","PC"),DevId=Wire.I(d,"id"),MicName=name});}}RemoteMics[from]=list;if(MicsChanged!=null)MicsChanged();return;}
    if(kind=="mic-request"){
     if(!AllowRemoteRequests){Emit(from,new{kind="mic-error",id=id,message="Microphone access is disabled on the source PC"});return;}
-    int dev=Wire.I(m,"devId",-1);if(!backend.Devices(true).Any(d=>d.Id==dev&&(Wire.S(m,"micName")==""||d.Name==Wire.S(m,"micName")))){Emit(from,new{kind="mic-error",id=id,message="Microphone was unplugged. Refresh the list."});return;}
+    int dev=Wire.I(m,"devId",-1);if(dev==-2){var preferred=backend.Devices(true).FirstOrDefault(d=>d.Name==PreferredInputName)??backend.Devices(true).FirstOrDefault(d=>d.Id==PreferredInput)??backend.Devices(true).FirstOrDefault(d=>d.Name.IndexOf("CABLE",StringComparison.OrdinalIgnoreCase)<0);dev=preferred==null?-1:preferred.Id;}if(!backend.Devices(true).Any(d=>d.Id==dev&&(Wire.S(m,"micName")==""||d.Name==Wire.S(m,"micName")))){Emit(from,new{kind="mic-error",id=id,message="Microphone was unplugged. Refresh the list."});return;}
     StartSender(from,dev,id);return;
    }
    if(kind=="mic-error"){if((from==requestedPeer&&id==requestId)||(listener!=null&&from==listener.Peer&&id==listener.Id)){StopReceiving();Update(Wire.S(m,"message","Microphone unavailable"));}return;}

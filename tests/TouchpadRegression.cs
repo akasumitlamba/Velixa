@@ -10,6 +10,9 @@ public static class TouchpadRegression {
  sealed class Surface:Form{public Capture GestureCapture;protected override void WndProc(ref Message m){if(GestureCapture!=null&&GestureCapture.Message(m.Msg,m.WParam)){m.Result=IntPtr.Zero;return;}base.WndProc(ref m);}}
  [DllImport("user32.dll")]static extern bool SetForegroundWindow(IntPtr window);
  [DllImport("user32.dll")]static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll")]static extern uint GetWindowThreadProcessId(IntPtr window,IntPtr process);
+ [DllImport("kernel32.dll")]static extern uint GetCurrentThreadId();
+ [DllImport("user32.dll")]static extern bool AttachThreadInput(uint from,uint to,bool attach);
  static readonly List<Dictionary<string,object>> packets=new List<Dictionary<string,object>>();static int checks;
  static void Check(bool value,string text){if(!value)throw new Exception(text);checks++;Console.WriteLine("PASS "+text);}
  static void Pump(int milliseconds){var end=DateTime.UtcNow.AddMilliseconds(milliseconds);while(DateTime.UtcNow<end){Application.DoEvents();System.Threading.Thread.Sleep(2);}}
@@ -17,14 +20,20 @@ public static class TouchpadRegression {
  static void Run(){
   Check(Marshal.SizeOf(typeof(Interop.Info))==96&&Marshal.SizeOf(typeof(Interop.Touch))==144&&Marshal.SizeOf(typeof(Interop.TypeInfo))==152,"x64 touchpad ABI matches Windows");
   using(var capture=new Capture(packet=>{var serializer=new JavaScriptSerializer();packets.Add(serializer.Deserialize<Dictionary<string,object>>(serializer.Serialize(packet)));}))
-  using(var form=new Surface{GestureCapture=capture,Text="Velixa gesture verification",Size=new Size(180,90),ShowInTaskbar=false}){
-   form.Show();Check(SetForegroundWindow(form.Handle),"test process receives foreground gestures");capture.Window(form.Handle);capture.Enable(true);Cursor.Position=form.PointToScreen(new Point(70,50));Pump(100);
+  using(var form=new Surface{GestureCapture=capture,Text="Velixa gesture verification",ClientSize=new Size(640,400),ShowInTaskbar=false}){
+   form.Show();form.Activate();SetForegroundWindow(form.Handle);Pump(100);
+   if(GetForegroundWindow()!=form.Handle){uint current=GetCurrentThreadId(),foreground=GetWindowThreadProcessId(GetForegroundWindow(),IntPtr.Zero);bool attached=foreground!=0&&foreground!=current&&AttachThreadInput(current,foreground,true);try{form.BringToFront();SetForegroundWindow(form.Handle);}finally{if(attached)AttachThreadInput(current,foreground,false);}Pump(100);}
+   Check(GetForegroundWindow()==form.Handle,"test process receives foreground gestures");capture.Window(form.Handle);capture.Enable(true);Cursor.Position=form.PointToScreen(new Point(320,200));Pump(100);
    var parameters=new Interop.Parameters{Type=5,Count=5,Feedback=3,Width=10000,Height=6000,Options=3};IntPtr device=Interop.CreateSyntheticPointerDevice2(ref parameters);
    Check(device!=IntPtr.Zero,"Windows creates synthetic precision touchpad");
    try{foreach(int fingers in new[]{2,3,4}){
+    // Replayed frames can move the pointer outside this deliberately small
+    // test surface. Every independent gesture must begin over the receiver.
+    SetForegroundWindow(form.Handle);Cursor.Position=form.PointToScreen(new Point(320,200));Pump(100);
+    Check(GetForegroundWindow()==form.Handle,fingers+" finger gesture begins over foreground test surface");
     packets.Clear();var frame=Enumerable.Range(0,fingers).Select(i=>new Interop.TypeInfo{Type=5,Touch=new Interop.Touch{Info=new Interop.Info{Type=5,Id=(uint)i,Flags=0x4006,Physical=new Interop.Point{X=2500+i*1400,Y=3000}}}}).ToArray();
     for(int step=0;step<6;step++){for(int i=0;i<fingers;i++){if(step>0&&step<5)frame[i].Touch.Info.Physical.X+=250;if(step==5)frame[i].Touch.Info.Flags=0x4000;}Check(Interop.InjectSyntheticPointerInput(device,frame,(uint)fingers),fingers+" fingers: native input frame "+step);Pump(80);}
-    Check(packets.Count>=3,fingers+" finger gesture captured as multiple physical frames");
+    Check(packets.Count>=3,fingers+" finger gesture captured as multiple physical frames (count="+packets.Count+", foreground="+(GetForegroundWindow()==form.Handle)+", cursor="+form.PointToClient(Cursor.Position)+")");
     var contacts=(System.Collections.IEnumerable)packets.Last()["contacts"];int released=0;foreach(Dictionary<string,object> contact in contacts){if((Convert.ToInt32(contact["flags"])&4)==0)released++;Check(Convert.ToInt32(contact["x"])>=0&&Convert.ToInt32(contact["x"])<=20000,"captured physical coordinates in protocol range");}
     Check(released==fingers,"release frame preserves every lifted finger");
     // Replay the wire representation through the production injector. Capture

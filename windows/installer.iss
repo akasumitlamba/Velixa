@@ -1,12 +1,12 @@
 [Setup]
 AppId={{ACE98A5E-9CB1-41C0-B507-6249D0E142E8}
 AppName=Velixa
-AppVersion=1.0.1
+AppVersion=1.1.0
 AppPublisher=Velixa
 DefaultDirName={autopf}\Velixa
 DefaultGroupName=Velixa
 OutputDir=..\dist
-OutputBaseFilename=Velixa-1.0.1-Windows-Setup
+OutputBaseFilename=Velixa-1.1.0-Windows-Setup
 SetupIconFile=..\build\windows\velixa.ico
 UninstallDisplayIcon={app}\Velixa.exe
 Compression=lzma2
@@ -24,6 +24,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 Name: "startup"; Description: "Open Velixa when I sign in to Windows"; Flags: checkedonce
 Name: "vbcable"; Description: "Set up VB-CABLE by VB-Audio for shared microphones (donationware)"; Flags: unchecked; Check: NeedsVBCable
 [Files]
+Source: "..\build\windows\Velixa.Audio.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\Velixa.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\Velixa.exe.config"; DestDir: "{app}"; Flags: ignoreversion
@@ -34,6 +35,8 @@ Source: "..\build\windows\QRCoder.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\Velixa.Touchpad.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows\VB-CABLE\*"; DestDir: "{app}\VB-CABLE"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\build\windows\NAudio.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\windows\NAudio-LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\Velixa"; Filename: "{app}\Velixa.exe"
 Name: "{autodesktop}\Velixa"; Filename: "{app}\Velixa.exe"; Tasks: desktopicon
@@ -54,3 +57,5 @@ function NeedsVBCable: Boolean;
 begin
   Result := not RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\VBAudioVACMME');
 end;
+
+

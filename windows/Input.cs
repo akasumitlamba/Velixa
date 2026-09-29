@@ -84,7 +84,7 @@ public class InputController : IDisposable {
  public InputController(){Order.Add(null);local=SystemInformation.VirtualScreen;anchor=new Point(Screen.PrimaryScreen.Bounds.Left+Screen.PrimaryScreen.Bounds.Width/2,Screen.PrimaryScreen.Bounds.Top+Screen.PrimaryScreen.Bounds.Height/2);hook=new HookState(this);focusGuard.Tick+=(s,e)=>CheckGestureFocus();}
  public void Add(Peer p){Order.Add(p);if(Changed!=null)Changed();}
  public void Remove(Peer p){if(Active==p)Home();Order.Remove(p);if(Changed!=null)Changed();}
- void StopTouchpad(){focusGuard.Stop();TouchpadBridge.Call(touchpad,"Enable",false);if(parking!=null&&Native.GetForegroundWindow()==parking.Handle&&previousForeground!=IntPtr.Zero)Native.SetForegroundWindow(previousForeground);previousForeground=IntPtr.Zero;}
+ void StopTouchpad(){focusGuard.Stop();TouchpadBridge.Call(touchpad,"Enable",false);if(parking!=null&&Native.GetForegroundWindow()==parking.Handle&&previousForeground!=IntPtr.Zero){var restore=previousForeground;parking.Hide();Native.SetForegroundWindow(restore);}previousForeground=IntPtr.Zero;}
  void StartTouchpad(){
   if(Active==null||Active.Kind!="Windows"||!Active.Touchpad){StopTouchpad();GestureState="Multi-finger gestures unavailable: update Velixa and Windows on both PCs";if(Notify!=null)Notify(GestureState);return;}
   if(!touchpadAttempted){touchpadAttempted=true;touchpad=TouchpadBridge.Create("Capture",(Action<object>)(packet=>{if(!Enabled||Active==null)return;gestureUntil=DateTime.UtcNow.AddMilliseconds(400);Active.Send(packet);}));}
@@ -99,6 +99,7 @@ public class InputController : IDisposable {
  static string Opposite(string d){return d=="left"?"right":d=="right"?"left":d=="top"?"bottom":"top";}
  void SwitchTo(Peer next,double ratio,string direction,bool feedback=true){
   if(held.Count>0||buttons.Count>0)return;
+  if(Active==null&&next!=null&&previousForeground==IntPtr.Zero)previousForeground=Native.GetForegroundWindow();
   Edge.Clear();
   double from=0,to=1,nextFrom=0,nextTo=1;var previous=BoundsOf(Active);var target=BoundsOf(next);double lo,hi;if(DeskGeometry.Segment(previous,target,direction,out lo,out hi)){from=lo;to=hi;}if(DeskGeometry.Segment(target,previous,Opposite(direction),out lo,out hi)){nextFrom=lo;nextTo=hi;}
   if(Active!=null)Active.Send(new{t="leave",edge=feedback?direction:"",edgeFrom=from,edgeTo=to});else if(feedback)Edge.Flash(direction,from,to);

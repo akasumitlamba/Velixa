@@ -50,7 +50,7 @@ See the [1.0.1 release notes](https://github.com/akasumitlamba/Velixa/releases/t
 1. Install the Windows app on each PC and the APK on each Android device.
 2. On one Windows PC, select **Create my desk**, then **Add device**. This PC becomes the coordinator and must remain awake.
 3. On another Windows PC, find the desk and enter the four-digit pairing code.
-4. On Android, enable Velixa continuity in Accessibility, then scan the QR code shown under **Add device > Android** on the coordinator.
+4. On Android, enable Velixa continuity in Accessibility, then scan the coordinator's QR code or enter its local IP address and four-digit pairing code.
 5. Drag the screen cards into the same arrangement as your physical devices.
 6. Move the pointer across a touching screen edge to take control of the next device.
 
@@ -58,30 +58,21 @@ If a pairing code expires, select **New pairing code** in the Windows pairing di
 
 ## Using your desk
 
-### Windows navigation
+### Windows desk controls
 
-| Page | What you can do |
-| --- | --- |
-| **My Desk** | Arrange device cards, select the input source, pause input sharing, toggle clipboard sharing, and zoom or fit the view. |
-| **Devices** | See device status, locate a device on the desk, adjust its screen size, include/exclude it from sharing, or forget a remote device. |
-| **Settings** | Change clipboard and incoming-file permissions, open received files, configure microphones, preview edge lights, or leave the desk. |
-| **Help** | Find setup guidance, shortcuts, microphone/gesture requirements, version, and project links in one place. |
+The desk canvas fills the main area. The right sidebar contains three current-PC switches: **Media sharing**, **Clipboard sharing**, and **File sharing**. Click a screen card to adjust that device's size, disconnect it temporarily, reconnect it, or remove it from the current desk. The bottom controls choose this PC's mouse/keyboard source and physical microphone/speaker.
 
-Controls that require a connection or selected device are disabled until those requirements are met. Microphone selection also depends on compatible receivers and incoming-audio permission.
-
-### Input and layouts
-
-- **Automatic input** lets any connected Windows PC's keyboard or mouse become the active source without a switching popup. A fixed source can be selected from **Input mode**.
+- **Automatic input** lets connected Windows PCs become the active keyboard/mouse source. Choose a fixed source from the hardware controls.
 - Press **Ctrl + Alt + Backspace** to return the pointer to the current source PC.
-- Closing or minimizing Velixa keeps it running in the system tray. Double-click the tray icon to reopen it, or select **Quit** to stop it.
-- Use the **Desks** menu to create, rename, switch, or delete layouts. Up to 12 layouts can share the same paired devices and coordinator.
-- Select a card, then use **Device actions**, or right-click it, to adjust its size or include/exclude it from input sharing. Excluding a device preserves its pairing and does not put the physical device to sleep. **Forget device** removes a remote device from every saved layout and requires pairing again.
-- Screen cards preserve their proportions and snap together without overlap. Multiple smaller screens can occupy different sections of a larger screen's edge.
-- Gold marks the local device; remote device borders are purple. Use **+**, **−**, and **Fit** to adjust the desk view.
+- Minimize keeps Velixa in the taskbar. The window's **X** hides it to the system tray. **Quit app** asks for confirmation and stops sharing.
+- The **Desks** menu creates, renames, switches, and deletes saved desks. Each desk remembers its own members, positions, sizes, and temporarily disconnected devices. Add a saved device through **Add device** without pairing again.
+- Removing a device affects the selected desk. Temporary disconnect preserves its position as a thin placeholder; waking it restores the full screen card. This does not power on a physically sleeping PC.
+- Use **+**, **−**, and **Fit** at the bottom-right of the canvas.
+- Saved pairings automatically retry when a device becomes reachable. The desk's coordinator must be running. Explicitly disconnected devices remain disconnected until resumed.
 
 ### Android layout
 
-Android uses the same navy-and-purple theme and logo as Windows. Setup shows **Enable continuity**, followed by **Scan QR code**. Once paired, the desk shows numbered screens with matching device names: drag a screen to arrange it, or tap it for input-sharing and size options.
+Android uses the same navy-and-purple theme and logo as Windows. Setup shows **Enable continuity**, followed by **Scan QR code** or **Connect with code**. Code pairing uses the PC's local IP address and four-digit code. Once paired, the desk shows numbered screens with matching device names: drag a screen to arrange it, or tap it for input-sharing and size options.
 
 The microphone card appears after continuity is enabled and the device is paired. Starting microphone sharing requires a live connection; stopping an active service remains available. **Disconnect this device** asks for confirmation. **Controls & help** explains mouse mappings and the return shortcut.
 
@@ -89,9 +80,9 @@ Android 8–12L also shows **Keyboard setup** with controls to enable and select
 
 ### Clipboard and files
 
-Text and image clipboard changes are shared between available Windows devices. Clipboard sharing and incoming files can be disabled in Settings. Clipboard payloads are limited to 16 MB.
+Text and image clipboard changes are shared between available Windows devices. The sidebar switches control clipboard and file sharing in both directions. Clipboard payloads are limited to 16 MB.
 
-To transfer a file, drop it onto the destination Windows screen card. Transfers arrive in **Downloads/Velixa**; open it from **Settings > Open received files**. A status panel shows progress, speed, and cancellation controls. Existing files are never overwritten, and completed content is verified with SHA-256.
+To transfer files, drop them onto the Velixa panel in the bottom-right corner of any Windows monitor, even while the main window is hidden. With one connected Windows PC, sending starts immediately; with multiple PCs, choose the destination from the menu. You can still drop files onto the destination Windows screen card. Transfers arrive in **Downloads/Velixa**; open it from the top-right menu's **Open received files**. Corner panels on both PCs show progress, speed, and cancellation controls. Existing files are never overwritten, and completed content is verified with SHA-256.
 
 The following are not currently supported:
 
@@ -100,34 +91,23 @@ The following are not currently supported:
 - Direct drag-and-drop between Explorer windows
 - Dropping files onto empty desk space
 
-## Microphone sharing
+## Media sharing
 
-Velixa lists available inputs with their source device, for example **USB microphone · Model name (VOSTRO)** or **System microphone (Motorola)**. The list refreshes approximately every five seconds.
+Turn on **Media sharing** to choose a microphone source and speaker destination independently. For example, Vostro can use Dell's microphone while sending its application audio to the mini PC's speakers. Enable media sharing on participating Windows PCs. Turning it off hides the selectors and restores local audio.
 
-Hardware names come from the operating system, while device-type labels depend on driver information. Android combines built-in routes into one system microphone and excludes telephony and virtual routes. Distinct USB, headset, and Bluetooth inputs remain selectable when exposed by the operating system.
+Each provider chooses its physical microphone and speaker in **This PC · hardware**. These controls are enabled when this PC supplies that route to itself or another device. Choosing a remote provider disables the corresponding local control when nobody uses it. The default choice follows the provider's Windows device; a selected USB or Bluetooth device is used when available.
 
-### Choose the microphone used on this PC
+Speaker audio can converge from multiple PCs onto one destination. Chained destinations resolve to the final PC, and feedback cycles are rejected. On Windows 11, process-loopback capture excludes Velixa's incoming microphone playback, allowing microphone and speaker routes to operate simultaneously. Local speakers are muted during remote speaker routing; prior mute states are restored on stop, disconnect, or unexpected app exit. Audio is streamed over the paired encrypted connection and is not saved to disk.
 
-On each Windows PC, use **My Desk > Microphone ▾** to choose a local microphone or one attached to a paired PC. Capture starts automatically on the selected source and stops when this PC releases it. No Share or Receive buttons are needed. Other PCs can select their own sources independently, and a PC can send and receive simultaneously.
+### Shared microphone in calling and recording apps
 
-**Microphone off** stops this PC's selected input without interrupting microphones being used by other PCs. In **Settings > Microphone output**, the saved **Let paired PCs use this PC’s microphones** permission controls whether other paired PCs may request capture; it is enabled by default. Microphones are advertised while connected but captured only on request. Offline sources disappear from the menu; choose a source again after a disconnect.
+Receiving a system-wide microphone requires the included [VB-CABLE driver](https://vb-audio.com/Cable/). The Windows installer offers optional setup; portable users can run **VB-CABLE/VBCABLE_Setup_x64.exe** as administrator and restart Windows if requested. The original donationware package and notice are included.
 
-### Use an Android microphone on Windows
+While a remote microphone is connected, Velixa exposes the cable endpoints and selects **CABLE Output** as the Windows microphone. Applications using the system default follow that selection; applications pinned to a specific microphone may need their selection changed. When that route stops, Velixa restores the previous physical microphone and hides the unused cable endpoints. Speaker-only sharing does not need the cable. Protected or exclusive-mode playback may not be captured.
 
-1. Open Velixa on Android and tap **Allow PCs to use microphone**.
-2. Grant microphone permission. A foreground notification remains visible and includes a **Stop** action.
-3. On a Windows PC, choose the phone's input from the microphone menu.
+### Android microphone
 
-Android sends a requested stream only to the selecting PC; other PCs select their inputs independently. Concurrent input routing remains subject to Android and audio-driver limitations. Android sends microphone audio only. It cannot play a Windows microphone into phone calls, emulate a Bluetooth headset, or replace Android's telephony microphone. USB and Bluetooth routing depends on the device and driver.
-
-### Use shared audio in Teams, Zoom, or another app
-
-Standard Windows applications cannot create a system-wide microphone endpoint. To expose Velixa's incoming audio as a microphone, install the included VB-CABLE driver on each receiving PC:
-
-1. Leave Velixa’s microphone output on **Automatic · virtual audio cable**. It finds **CABLE Input** automatically. If no cable is installed, Velixa explains the missing setup instead of playing through speakers.
-2. In the calling or recording app, select the cable's recording endpoint, such as **CABLE Output**, as its microphone.
-
-[VB-CABLE](https://vb-audio.com/Cable/) is one option and is distributed under its own license. Windows downloads include the original VB-CABLE package and its donationware notice. The installer offers optional setup when the driver is absent; portable users can run VB-CABLE/VBCABLE_Setup_x64.exe as administrator. Restart Windows after driver installation. Selecting speakers or headphones as the receiving output plays the stream aloud. Local microphone selections also feed the cable, so your calling app can keep **CABLE Output** selected when you change sources in Velixa. Velixa streams audio and does not save it to disk.
+On Android, tap **Allow PCs to use microphone** and grant microphone permission. A foreground notification provides a Stop action. Select that phone as the microphone source on Windows. Android supplies microphone audio; it does not receive system speaker audio or replace the microphone used by phone calls. USB and Bluetooth routes depend on Android and the connected hardware.
 
 ## Trackpad gestures and screen edges
 
@@ -170,6 +150,7 @@ Version 1.0.1 includes Windows continuity and native gesture regressions alongsi
 ### Requirements
 
 - Updated Windows 11 with Precision Touchpad API WinMetadata (for building the optional runtime bridge)
+- Visual Studio C++ x64 build tools and Windows SDK 10.0.20348 or newer (for the process audio bridge)
 - PowerShell 7
 - .NET Framework 4.8
 - Inno Setup 6

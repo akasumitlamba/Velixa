@@ -45,3 +45,7 @@ https://vb-audio.com/Cable/
 VB-CABLE is donationware. All participations are welcome.
 Support/license: https://shop.vb-audio.com/
 See VB-CABLE/VB-CABLE-NOTICE.txt and VB-CABLE/readme.txt for terms and setup.
+
+NAudio 1.10.0 — Copyright Mark Heath and contributors. Microsoft Public License (Ms-PL).
+https://github.com/naudio/NAudio
+See NAudio-LICENSE.txt for the complete license.

@@ -1,0 +1,10 @@
+using System;
+using System.Diagnostics;
+using System.Text;
+using Org.BouncyCastle.Crypto.Agreement.Srp;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Math;
+class SrpInterop {
+ static void Main(){for(int i=0;i<3;i++){var group=Org.BouncyCastle.Tls.Crypto.Srp6StandardGroups.rfc5054_2048;var random=new SecureRandom();var salt=new byte[32];random.NextBytes(salt);string identity="Velixa-v2|interop|"+i,password=i==0?"0000":i==1?"1234":"9876";var verifier=new Srp6VerifierGenerator();verifier.Init(group.N,group.G,new Sha256Digest());var server=new Srp6Server();server.Init(group.N,group.G,verifier.GenerateVerifier(salt,Encoding.UTF8.GetBytes(identity),Encoding.UTF8.GetBytes(password)),new Sha256Digest(),random);var b=server.GenerateServerCredentials();var info=new ProcessStartInfo("java","-cp build/srp com.velixa.app.SrpInterop"){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};using(var process=Process.Start(info)){process.StandardInput.WriteLine(identity);process.StandardInput.WriteLine(password);process.StandardInput.WriteLine(Convert.ToBase64String(salt));process.StandardInput.WriteLine(b.ToString(16));process.StandardInput.Flush();var a=process.StandardOutput.ReadLine();var proof=process.StandardOutput.ReadLine();if(a==null||proof==null)throw new Exception(process.StandardError.ReadToEnd());server.CalculateSecret(new BigInteger(a,16));if(!server.VerifyClientEvidenceMessage(new BigInteger(proof,16)))throw new Exception("Android client proof rejected");process.StandardInput.WriteLine(server.CalculateServerEvidenceMessage().ToString(16));process.StandardInput.Flush();string key=process.StandardOutput.ReadLine();if(key!=server.CalculateSessionKey().ToString(16))throw new Exception("Android session key mismatch");if(!process.WaitForExit(5000)||process.ExitCode!=0)throw new Exception("Java interop process failed");}}Console.WriteLine("3 Android Java / Windows SRP handshakes passed, including leading-zero pairing code.");}
+}
