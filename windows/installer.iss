@@ -1,12 +1,12 @@
 [Setup]
 AppId={{ACE98A5E-9CB1-41C0-B507-6249D0E142E8}
 AppName=Velixa
-AppVersion=1.1.0
+AppVersion=1.2.1
 AppPublisher=Velixa
 DefaultDirName={autopf}\Velixa
 DefaultGroupName=Velixa
 OutputDir=..\dist
-OutputBaseFilename=Velixa-1.1.0-Windows-Setup
+OutputBaseFilename=Velixa-1.2.1-Windows-Setup
 SetupIconFile=..\build\windows\velixa.ico
 UninstallDisplayIcon={app}\Velixa.exe
 Compression=lzma2

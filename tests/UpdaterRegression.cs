@@ -1,0 +1,8 @@
+using System;
+using Velixa;
+class UpdaterRegression {
+ static int count;
+ static void Check(bool ok,string name){if(!ok)throw new Exception(name);Console.WriteLine("PASS "+name);count++;}
+ static UpdateRelease Release(){return new UpdateRelease{tag_name="v1.3.0",assets=new[]{new UpdateAsset{name="Velixa-1.3.0-Windows-Setup.exe",size=100,digest="sha256:"+new string('a',64),browser_download_url="https://github.com/akasumitlamba/Velixa/releases/download/v1.3.0/Velixa-1.3.0-Windows-Setup.exe"}}};}
+ static void Main(){var installed=new Version(1,2,1,0);var r=Release();Check(Updater.Select(r,installed)!=null,"new stable installer accepted");r.prerelease=true;Check(Updater.Select(r,installed)==null,"prerelease excluded");r=Release();r.draft=true;Check(Updater.Select(r,installed)==null,"draft excluded");r=Release();Check(Updater.Select(r,new Version(1,3,0,0))==null,"same version excluded");Check(Updater.Select(r,new Version(2,0,0,0))==null,"downgrade excluded");r.tag_name="v1.3.0-rc.1";Check(Updater.Select(r,installed)==null,"prerelease tag excluded even without flag");r=Release();r.assets[0].digest=null;Check(Updater.Select(r,installed)==null,"missing digest excluded");r=Release();r.assets[0].browser_download_url="https://example.com/setup.exe";Check(Updater.Select(r,installed)==null,"foreign download excluded");r=Release();r.assets[0].size=300000000;Check(Updater.Select(r,installed)==null,"oversized download excluded");r=Release();r.assets[0].name="Velixa-1.3.0-Windows-Portable.zip";Check(Updater.Select(r,installed)==null,"wrong asset excluded");Check(Updater.Select(null,installed)==null,"empty release ignored");Console.WriteLine(count+" updater checks passed");}
+}

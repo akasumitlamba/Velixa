@@ -4,8 +4,8 @@
 
 Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphones across a local desk. Move the pointer across the edge of one screen to control another Windows or Android device, with no account and no cloud relay.
 
-[![Latest Windows release](https://img.shields.io/badge/Windows-1.0.1-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.1)
-[![Latest Android release](https://img.shields.io/badge/Android-1.0.1-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.1)
+[![Latest Windows release](https://img.shields.io/badge/Windows-1.2.1-0078D4?logo=windows)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.2.1)
+[![Latest Android release](https://img.shields.io/badge/Android-1.2.1-3DDC84?logo=android&logoColor=white)](https://github.com/akasumitlamba/Velixa/releases/tag/v1.2.1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F4B942.svg)](LICENSE)
 
 ![Velixa desk with aligned controls, gold local screen and purple remote screens](docs/desk.png)
@@ -30,20 +30,28 @@ Velixa lets Windows PCs share a keyboard, mouse, clipboard, files, and microphon
 | Receive microphone audio | Yes | No |
 
 > [!NOTE]
-> Velixa 1.0.1 bundles optional VB-CABLE setup for shared microphones, with matching Windows and Android versions. It includes receiver-selected microphones, native Windows touchpad gesture forwarding, corrected edge feedback, and simpler controls. Existing pairings are retained. Offline reconnection stops after three attempts; use Retry connection when the other PC is back. Pause input, microphone selection, and Disconnect stay available across desk screens. Offline device removal is saved locally and synchronized when the coordinator returns.
+> Velixa 1.2.1 bundles optional VB-CABLE setup for shared microphones, with matching Windows and Android versions. It includes receiver-selected microphones, native Windows touchpad gesture forwarding, corrected edge feedback, and simpler controls. Existing pairings are retained. Offline reconnection stops after three attempts; use Retry connection when the other PC is back. Pause input, microphone selection, and Disconnect stay available across desk screens. Offline device removal is saved locally and synchronized when the coordinator returns.
 
 ## Download
 
 | Download | Use |
 | --- | --- |
-| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.1/Velixa-1.0.1-Windows-Setup.exe) | Install Velixa on a Windows PC. |
-| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.1/Velixa-1.0.1-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
-| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.1/Velixa-1.0.1-Android.apk) | Install or update Velixa on an Android device. |
-| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v1.0.1/SHA256SUMS-1.0.1.txt) | Verify the downloaded files. |
+| [Windows installer](https://github.com/akasumitlamba/Velixa/releases/download/v1.2.1/Velixa-1.2.1-Windows-Setup.exe) | Install Velixa on a Windows PC. |
+| [Windows portable ZIP](https://github.com/akasumitlamba/Velixa/releases/download/v1.2.1/Velixa-1.2.1-Windows-Portable.zip) | Extract the complete folder and run `Velixa.exe`. Keep the included dependencies beside it. |
+| [Android APK](https://github.com/akasumitlamba/Velixa/releases/download/v1.2.1/Velixa-1.2.1-Android.apk) | Install or update Velixa on an Android device. |
+| [SHA-256 checksums](https://github.com/akasumitlamba/Velixa/releases/download/v1.2.1/SHA256SUMS-1.2.1.txt) | Verify the downloaded files. |
 
 Windows requires .NET Framework 4.8. The installer is unsigned, so Windows may display an unknown-publisher warning. Android requires Android 8 or later; the APK retains the project's existing signing identity for upgrades.
 
-See the [1.0.1 release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v1.0.1). This update includes the optional VB-CABLE driver package. Hardware-specific validation limits are documented in TESTING.md.
+See the [1.2.1 release notes](https://github.com/akasumitlamba/Velixa/releases/tag/v1.2.1). This update includes the optional VB-CABLE driver package. Hardware-specific validation limits are documented in TESTING.md.
+
+### Automatic updates (1.2.1 and later)
+
+Windows and Android check the official GitHub latest-release endpoint once per app process launch. Only a newer stable version is eligible; drafts, prereleases, and downgrades are ignored. The matching installer/APK downloads in the background and must match the release asset's SHA-256 digest. Assets without a digest are skipped. Android additionally verifies the package identity, signing certificate, and increasing version code.
+
+After download, choose **Install** to proceed or **Later** to keep using the current version. Windows opens setup and exits Velixa after confirmation; approve Windows elevation if requested, then reopen Velixa after installation. Android opens its system installer and may first ask you to allow installation from Velixa. No update is installed without confirmation. A cancelled or unavailable update can be offered again on the next process launch. Offline checks fail quietly and do not interrupt local desk sharing.
+
+Update checks contact GitHub over HTTPS; desk input and sharing remain on the local network. Release maintainers must publish matching `Velixa-X.Y.Z-Windows-Setup.exe` and `Velixa-X.Y.Z-Android.apk` assets, use a stable `vX.Y.Z` tag, retain Android's signing identity, and increase its version code. Local builds are not automatically published.
 
 ## Quick start
 
@@ -143,7 +151,7 @@ On Android, camera permission is used only to scan pairing QR codes. Microphone 
 - The coordinator must remain awake. Automatic coordinator migration is not yet implemented.
 - Hardware and driver behavior varies. Automated validation cannot guarantee compatibility with every PC, phone, microphone, or calling app.
 
-Version 1.0.1 includes Windows continuity and native gesture regressions alongside the integration, sharing, and desktop suites. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
+Version 1.2.1 includes Windows continuity and native gesture regressions alongside the integration, sharing, and desktop suites. For exact coverage and remaining physical-device acceptance, see [Testing](TESTING.md).
 
 ## Build from source
 

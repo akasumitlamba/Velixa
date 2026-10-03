@@ -3,6 +3,8 @@ import android.app.*;import android.os.*;import android.content.*;import android
 public class Theme extends Instrumentation {
  public void onCreate(Bundle args){start();}
  public void onStart(){Bundle result=new Bundle();try{
+ if(!Updater.newer("1.3.0","1.2.1")||Updater.newer("1.2.1","1.2.1")||Updater.newer("1.1.0","1.2.1")||Updater.newer("1.3.0-rc.1","1.2.1"))throw new AssertionError("Update version selection failed");
+ Updater.checked=true; // UI instrumentation must not contact the production update feed.
  MainActivity activity=(MainActivity)startActivitySync(new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();Thread.sleep(1000);
  runOnMainSync(()->{String version=activity.appVersion();boolean found=false;for(int i=0;i<activity.root.getChildCount();i++){android.view.View v=activity.root.getChildAt(i);if(v instanceof android.widget.TextView&&((android.widget.TextView)v).getText().toString().contains("Velixa "+version))found=true;}if(version.isEmpty()||!found)throw new AssertionError("Footer must match packaged version");});
  runOnMainSync(()->{activity.timer.removeCallbacks(activity.refresh);activity.setup.setVisibility(android.view.View.VISIBLE);activity.pair.setVisibility(android.view.View.GONE);activity.connectionCard.setVisibility(android.view.View.GONE);activity.microphoneCard.setVisibility(android.view.View.GONE);activity.subtitle.setText("Enable continuity to connect this screen.");});waitForIdleSync();capture("theme-setup.png");
